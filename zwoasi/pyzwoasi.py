@@ -9,7 +9,6 @@ import ctypes as c
 from ctypes.util import find_library
 import logging
 import numpy as np
-import os
 import six
 import sys
 import time
@@ -60,42 +59,57 @@ class Camera(object):
 
     The constructor for a camera object requires the camera ID number or model. The camera destructor automatically
     closes the camera."""
-    def __init__(self, id_):
-        if isinstance(id_, int):
-            if id_ >= get_num_cameras() or id_ < 0:
+    default_timeout = -1
+    def __init__(self, id):
+        
+        self.id = id
+        self.detect_camera()
+    
+    def detect_camera(self):
+        # find the camera
+        if isinstance(self.id, int):
+            if self.id>= get_num_cameras() or self.id< 0:
                 raise IndexError('Invalid id')
-        elif isinstance(id_, six.string_types):
+        elif isinstance(self.id, six.string_types):
             # Find first matching camera model
             found = False
             for n in range(get_num_cameras()):
                 model = _get_camera_property(n)['Name']
-                if model in (id_, 'ZWO ' + id_):
+                if model in (self.id, 'ZWO ' + self.id):
                     found = True
-                    id_ = n
+                    self.id= n
                     break
             if not found:
-                raise ValueError('Could not find camera model %s' % id_)
-
+                raise ValueError('Could not find camera model %s' % self.id)
         else:
             raise TypeError('Unknown type for id')
-
-        self.id = id_
-        self.default_timeout = -1
         try:
-            _open_camera(id_)
+            _open_camera(self.id)
             self.closed = False
 
-            _init_camera(id_)
+            _init_camera(self.id)
         except Exception:
             self.closed = True
-            _close_camera(id_)
-            logger.error('could not open camera ' + str(id_))
+            _close_camera(self.id)
+            logger.error('could not open camera ' + str(self.id))
             logger.debug(traceback.format_exc())
-            raise
-            
-    def __del__(self):
-            self.close()
-            
+            raise  
+        
+    def set_camera(self):
+        # initialization of the camera
+        self.detect_camera()
+        self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
+        self.gain = self.get_control_value(ASI_GAIN)[0]
+        print('exp gain', self.exposure, self.gain)
+       
+        self.set_image_type(ASI_IMG_RAW8)
+        self.set_control_value(ASI_BANDWIDTHOVERLOAD,
+                                      self.get_controls()['BandWidth']['MinValue'])
+        self.set_roi(width=self.width,
+                            height=self.height,
+                            bins=self.n_bins)
+        self.start_video_capture()
+    
     def get_camera_property(self):
         return _get_camera_property(self.id)
 
@@ -144,15 +158,6 @@ class Camera(object):
 
     def get_trigger_output_io_conf(self, pin):
         return _get_trigger_output_io_conf(self.id, pin)
-         
-    def close(self):
-        """Close the camera in the ASI library.
-
-        The destructor will automatically close the camera if it has not already been closed."""
-        try:
-            _close_camera(self.id)
-        finally:
-            self.closed = True
 
     def get_roi(self):
         """Retrieves the region of interest (ROI).
@@ -176,6 +181,10 @@ class Camera(object):
 
         If ``start_x=None`` then the ROI will be horizontally centred. If ``start_y=None`` then the ROI will be
         vertically centred."""
+        self.width = width
+        self.height = height
+        self.n_bins = bins
+        
         cam_info = self.get_camera_property()
         whbi = self.get_roi_format()
 
@@ -238,25 +247,8 @@ class Camera(object):
     def disable_dark_subtract(self):
         _disable_dark_subtract(self.id)
         
-    def start_video_capture(self):
-        """Enable video capture mode.
-
-        Retrieve video frames with :func:`capture_video_frame()`."""
-        return _start_video_capture(self.id)
     
-    def stop_video_capture(self):
-        """Leave video capture mode."""
-        return _stop_video_capture(self.id)
-
-    def get_video_data(self, timeout=None, buffer_=None):
-        """Retrieve a single video frame. Type :class:`bytearray`.
-
-        Low-level function to retrieve data. See :func:`capture_video_frame()` for a more convenient method to
-        acquire an image (and optionally save it)."""
-        if timeout is None:
-            timeout = self.default_timeout
-        return _get_video_data(self.id, timeout, buffer_)
-
+    
     def pulse_guide_on(self, direction):
         _pulse_guide_on(self.id, direction)
         return
@@ -276,6 +268,7 @@ class Camera(object):
         return self.get_roi_format()[3]
 
     def set_image_type(self, image_type):
+        self.image_type = image_type
         whbi = self.get_roi_format()
         whbi[3] = image_type
         self.set_roi_format(*whbi)
@@ -320,7 +313,27 @@ class Camera(object):
             image.save(filename)
             logger.debug('wrote %s', filename)
         return img
+    
+    def start_video_capture(self):
+        """Enable video capture mode.
 
+        Retrieve video frames with :func:`capture_video_frame()`."""
+        return _start_video_capture(self.id)
+    
+
+    def get_video_data(self, timeout=None, buffer_=None):
+        """Retrieve a single video frame. Type :class:`bytearray`.
+
+        Low-level function to retrieve data. See :func:`capture_video_frame()` for a more convenient method to
+        acquire an image (and optionally save it)."""
+        if timeout is None:
+            timeout = self.default_timeout
+        return _get_video_data(self.id, timeout, buffer_)
+    
+    def stop_video_capture(self):
+        """Leave video capture mode."""
+        return _stop_video_capture(self.id)
+    
     def capture_video_frame(self, buffer_=None, filename=None, timeout=None):
         """Capture a single frame from video. Type :class:`numpy.ndarray`.
 
@@ -363,23 +376,67 @@ class Camera(object):
             r[k] = self.get_control_value(controls[k]['ControlType'])[0]
         return r
 
-    def auto_exposure(self, auto=('Exposure', 'Gain')):
+    def auto_exposure(self, on = True):
         controls = self.get_controls()
         r = []
-        for ctrl in auto:
-            if ctrl == 'BandWidth':
-                continue  # auto setting is supported but is not an exposure setting
-            if ctrl in controls and controls[ctrl]['IsAutoSupported']:
-                self.set_control_value(controls[ctrl]['ControlType'],
-                                       controls[ctrl]['DefaultValue'],
-                                       auto=True)
-                r.append(ctrl)
+        auto=('Exposure', 'Gain')
+        self.set_control_value(controls['AutoExpMaxExpMS']['ControlType'], 
+                               controls['AutoExpMaxExpMS']['MaxValue'])
+
+        if on: 
+            for ctrl in auto:
+                if ctrl == 'BandWidth':
+                   continue  # auto setting is supported but is not an exposure setting
+                if ctrl in controls and controls[ctrl]['IsAutoSupported']:
+                    self.set_control_value(controls[ctrl]['ControlType'],
+                                           controls[ctrl]['DefaultValue'],
+                                           auto=on)
+                    r.append(ctrl)
+        if not on: 
+           self.get_gain()
+           self.set_gain()
+           self.get_exp()
+           self.set_exp()
+               
         return r
+        
 
     def auto_wb(self, wb=('WB_B', 'WB_R')):
         return self.auto_exposure(auto=wb)
 
-
+    def set_exp(self): 
+        self.set_control_value(ASI_EXPOSURE, self.exposure, auto=False)
+    def get_exp(self): 
+        self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
+        #print('exp =', self.exposure)
+        return self.exposure
+    def set_gain(self): 
+        self.set_control_value(ASI_GAIN, self.gain, auto=False)
+    def get_gain(self): 
+        self.gain = self.get_control_value(ASI_GAIN)[0]
+        #print('gain =', self.gain)
+        return self.gain
+        
+    def set_autoexp_off(self):
+        self.get_gain()
+        self.set_gain()
+        self.get_exp()
+        self.set_exp()
+    
+    def close(self):
+        """Close the camera in the ASI library.
+    
+        The destructor will automatically close the camera if it has not already been closed."""
+        try:
+            _close_camera(self.id)
+        finally:
+            self.closed = True
+    
+    def __del__(self):
+        self.close()
+        
+        
+        
 def _get_camera_property(id_):
     prop = _ASI_CAMERA_INFO()
     r = zwolib.ASIGetCameraProperty(prop, id_)
@@ -790,6 +847,7 @@ class _ASI_SUPPORTED_MODE(c.Structure):
 
 
 def init(library_file=None):
+    print('initialization')
     global zwolib
 
     if zwolib is not None:
@@ -937,11 +995,7 @@ def init(library_file=None):
                                                  c.POINTER(c.c_long)]
     zwolib.ASIGetTriggerOutputIOConf.restype = c.c_int
 
-zwolib = None
-try:
-    init() # Initialize library on import, will only run once.
-except ZWO_Error as e:
-    print("Warning: " + str(e), file=sys.stderr)
+
 
 
 logger = logging.getLogger(__name__)
@@ -1033,3 +1087,4 @@ zwo_errors = [None,
               ]
 
 
+zwolib = None

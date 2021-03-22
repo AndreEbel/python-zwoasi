@@ -113,4 +113,5 @@ class Display(QWidget):
     def closeEvent(self, event):
         if self.display_thread.display: 
             self.display_thread.stop()
+        self.display_thread.camera.close()
         event.accept()        

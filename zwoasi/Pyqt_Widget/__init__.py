@@ -8,5 +8,5 @@ Created on Tue Mar 16 11:25:05 2021
 from .DisplayAdvanced import DisplayAdvanced
 from .DisplaySave import DisplaySave
 from .Display import Display
-from .AdvancedHist import DisplayAdvancedHist
+from .DisplayAdvancedHist import DisplayAdvancedHist
 from .MultiCam import MultiCam 

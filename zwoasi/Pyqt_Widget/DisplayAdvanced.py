@@ -65,20 +65,20 @@ class DisplayAdvanced(DisplaySave):
         print(self.display_thread.gain)
 
     def ClickAutoExposureOn(self):
-        if self.display_thread.camera.display: 
+        if not self.display_thread.camera.closed: 
             self.auto_exposure_button.clicked.disconnect(self.ClickAutoExposureOn)
             self.display_thread.auto_exp = True
-            self.display_thread.camera.set_autoexp_on()
+            self.display_thread.camera.auto_exposure(on = True)
             
             self.auto_exposure_button.setText('Set AutoExposure Off')
             self.auto_exposure_button.clicked.connect(self.ClickAutoExposureOff)
         
     def ClickAutoExposureOff(self):
-        if self.display_thread.camera.display:     
+        if not self.display_thread.camera.closed:     
             self.auto_exposure_button.clicked.disconnect(self.ClickAutoExposureOff)
             # save exposure settings 
             print('autoexp off')
-            self.display_thread.camera.set_autoexp_off()
+            self.display_thread.camera.auto_exposure(on = False)
             #self.display_thread.camera.get_gain()
             self.gain_input.setText(str(self.display_thread.camera.gain))
             #self.display_thread.camera.get_exp()

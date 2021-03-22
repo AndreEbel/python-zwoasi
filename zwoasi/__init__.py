@@ -8,5 +8,4 @@ except ZWO_Error as e:
     print("Warning: " + str(e), file=sys.stderr)
     
 from . import Pyqt_Widget
-from .cameras import ZwoCamera
-from .Pyqt_App import ZwoDisplay, ZwoDisplaySave, ZwoDisplayAdvanced, ZwoDisplayAdvancedHist, ZwoMulticam
+from .Pyqt_App import ZwoDisplay, ZwoDisplaySave, ZwoDisplayAdvanced, ZwoDisplayAdvancedHist, ZwoMultiCam

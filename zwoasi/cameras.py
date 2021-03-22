@@ -4,6 +4,7 @@ Created on Wed Mar 10 10:38:31 2021
 
 @author: ebel
 """
+import pyzwoasi as asi
 
 class Camera:
     display = False
@@ -16,7 +17,6 @@ class Camera:
         self.n_bins = bins 
         self.camera = None
 
-import zwoasi as asi  
 class ZwoCamera(Camera):
         
     def set_camera(self):
