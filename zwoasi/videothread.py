@@ -28,7 +28,7 @@ class VideoThread(QThread):
         # capture from web cam
         self.camera.set_camera()
         t_save = -1e30
-        while not self.camera.closed:
+        while self.camera.ready and not self.camera.closed:
            
             # recording
             if self.record:
@@ -52,15 +52,16 @@ class VideoThread(QThread):
                     t_save = t_i
                 self.save = False
             sleep(self.camera.exposure*1e-6)
-        # shut down capture system      
-        print(self.camera.closed)
+        # shut down capture system   
+        self.camera.close()
+        sleep(5*self.camera.exposure*1e-6)
+        #print(self.camera.closed)
 
     def stop(self):
         """Sets run flag to False and waits for thread to finish"""
-        print('stop')
-        self.camera.stop_exposure()
-        print(self.camera.get_exposure_status())
+        #print('stop')
+        #self.camera.stop_exposure()
+        #print(self.camera.get_exposure_status())
         self.camera.ready = False
-        self.camera.close()
-        sleep(5*self.camera.exposure*1e-6)
+        
         self.wait()

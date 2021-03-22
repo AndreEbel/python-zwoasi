@@ -104,7 +104,7 @@ class Display(QWidget):
         self.ss_video.clicked.disconnect(self.ClickStopVideo)
         
         self.ss_video.setText('Start video')
-        #self.textLabel1.setText('Ready to start')
+        self.textLabel1.setText('Ready to start')
         #self.textLabel2.setText('No video')
         #self.textLabel3.setText('No video')
         # Start the video if button clicked

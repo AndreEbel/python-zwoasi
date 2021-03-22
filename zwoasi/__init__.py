@@ -1,3 +1,9 @@
+
+__author__ = 'Steve Marple'
+__version__ = '2'
+__license__ = 'MIT'
+
+
 import sys
 
 from .pyzwoasi import ZWO_Error, get_num_cameras, list_cameras, Camera, init, zwolib
