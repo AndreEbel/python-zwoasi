@@ -15,10 +15,6 @@ import time
 import traceback
 
 
-__author__ = 'Steve Marple'
-__version__ = '2'
-__license__ = 'MIT'
-
 
 def get_num_cameras():
     """Retrieves the number of ZWO ASI cameras that are connected. Type :class:`int`."""
