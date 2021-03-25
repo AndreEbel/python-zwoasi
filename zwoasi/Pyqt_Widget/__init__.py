@@ -9,4 +9,4 @@ from .DisplayAdvanced import DisplayAdvanced
 from .DisplaySave import DisplaySave
 from .Display import Display
 from .DisplayAdvancedHist import DisplayAdvancedHist
-from .MultiCam import MultiCam 
+from .MultiCam import MultiCam , TwoCam

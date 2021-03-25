@@ -1,16 +1,10 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Mar  9 18:49:13 2021
-
-@author: ebel
-"""
-
-from .DisplaySave import DisplaySave
+from .DisplaySave import DisplaySave_base
 from PyQt5.QtWidgets import QLineEdit,QHBoxLayout, QPushButton
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtCore import Qt
+from time import sleep
 
-class DisplayAdvanced(DisplaySave):
+class DisplayAdvanced_base(DisplaySave_base):
     def __init__(self, VideoThread, w, h):
         super().__init__(VideoThread,  w, h)
         
@@ -57,12 +51,12 @@ class DisplayAdvanced(DisplaySave):
     def ClickSetExposure(self):
         self.display_thread.camera.exposure = int(self.exposure_input.text())
         self.display_thread.camera.set_exp()
-        print(self.display_thread.camera.exposure)
+        
     
     def ClickSetGain(self):
         self.display_thread.camera.gain = int(self.gain_input.text())
         self.display_thread.camera.set_gain()
-        print(self.display_thread.gain)
+        
 
     def ClickAutoExposureOn(self):
         if not self.display_thread.camera.closed: 
@@ -87,3 +81,15 @@ class DisplayAdvanced(DisplaySave):
          
             self.auto_exposure_button.setText('Set AutoExposure On')
             self.auto_exposure_button.clicked.connect(self.ClickAutoExposureOn)
+
+class DisplayAdvanced(DisplayAdvanced_base):
+    def __init__(self, VideoThread, w, h):
+        super().__init__(VideoThread,  w, h)
+    def closeEvent(self, event):
+        if self.display_thread.camera.ready: 
+            self.display_thread.stop()
+            self.display_thread.camera.close()
+        if self.display_thread.camera.closed:
+            print('closing')
+            self.closed = True
+            event.accept()        

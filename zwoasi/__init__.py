@@ -1,8 +1,4 @@
-
-__author__ = 'Steve Marple'
 __version__ = '2'
-__license__ = 'MIT'
-
 
 import sys
 
@@ -14,4 +10,4 @@ except ZWO_Error as e:
     print("Warning: " + str(e), file=sys.stderr)
     
 from . import Pyqt_Widget
-from .Pyqt_App import ZwoDisplay, ZwoDisplaySave, ZwoDisplayAdvanced, ZwoDisplayAdvancedHist, ZwoMultiCam
+from . import Pyqt_App 

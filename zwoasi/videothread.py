@@ -1,22 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Mar  9 19:03:02 2021
-
-@author: ebel
-"""
-
 from PyQt5.QtCore import pyqtSignal, QThread
 import numpy as np
 from time import sleep, time_ns
 
 
 class VideoThread(QThread):
-    exposure = None
-    gain = None
+    #exposure = None
+    #gain = None
     auto_exp = False
     save = False
     record = False
-    display = False
+    #display = False
     display_frame = pyqtSignal(np.ndarray)
     save_frame = pyqtSignal(np.ndarray)
     
@@ -26,7 +19,7 @@ class VideoThread(QThread):
 
     def run(self):
         # capture from web cam
-        self.camera.set_camera()
+        #self.camera.set_camera()
         t_save = -1e30
         while self.camera.ready and not self.camera.closed:
            
@@ -52,16 +45,11 @@ class VideoThread(QThread):
                     t_save = t_i
                 self.save = False
             sleep(self.camera.exposure*1e-6)
-        # shut down capture system   
-        self.camera.close()
-        sleep(5*self.camera.exposure*1e-6)
-        #print(self.camera.closed)
-
+        
     def stop(self):
-        """Sets run flag to False and waits for thread to finish"""
-        #print('stop')
-        #self.camera.stop_exposure()
-        #print(self.camera.get_exposure_status())
+        """
+        Sets ready flag to False and waits for thread to finish
+        """
         self.camera.ready = False
         
         self.wait()

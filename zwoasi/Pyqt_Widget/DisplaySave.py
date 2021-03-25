@@ -5,7 +5,7 @@ Created on Tue Mar  9 19:04:32 2021
 @author: ebel
 """
 
-from .Display import Display
+from .Display import Display_base
 
 from PyQt5.QtWidgets import QLineEdit, QLabel,QHBoxLayout, QPushButton
 from PyQt5.QtGui import QIntValidator
@@ -15,7 +15,7 @@ import numpy as np
 from time import time_ns, sleep
 import os
 
-class DisplaySave(Display):
+class DisplaySave_base(Display_base):
     def __init__(self, VideoThread, w, h):
         super().__init__(VideoThread,  w, h)
       
@@ -109,7 +109,7 @@ class DisplaySave(Display):
         
     def ClickSaveFrame(self):         
         print('saved pressed')
-        if self.display_thread.camera.display:
+        if self.display_thread.camera.ready:
             if self.filename: 
                 #self.saving = True
                 # update labels
@@ -125,7 +125,7 @@ class DisplaySave(Display):
     def ClickStartRecording(self): 
         
         print('recording pressed')
-        if self.display_thread.camera.display:
+        if self.display_thread.camera.ready:
             if self.filename: 
                 if self.period:
                     print('recording ok')
@@ -164,3 +164,18 @@ class DisplaySave(Display):
         self.record_button.setText('Start recording')
         # Start the video if button clicked
         self.record_button.clicked.connect(self.ClickStartRecording)
+        
+class DisplaySave(DisplaySave_base):
+    def __init__(self, VideoThread, w, h):
+        super().__init__(VideoThread,  w, h)
+    def closeEvent(self, event):
+        if self.display_thread.camera.ready: 
+            self.display_thread.stop()
+            try: 
+                self.display_thread.camera.close()
+            except: 
+                print('camera already closed')
+        if self.display_thread.camera.closed:
+            print('closing')
+            self.closed = True
+            event.accept()        

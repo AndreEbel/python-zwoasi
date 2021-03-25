@@ -17,13 +17,19 @@ import traceback
 
 
 def get_num_cameras():
-    """Retrieves the number of ZWO ASI cameras that are connected. Type :class:`int`."""
+    """
+    Retrieves the number of ZWO ASI cameras that are connected. 
+    Type :class:`int`.
+    """
     return zwolib.ASIGetNumOfConnectedCameras()
 
 
 
 def list_cameras():
-    """Retrieves model names of all connected ZWO ASI cameras. Type :class:`list` of :class:`str`."""
+    """
+    Retrieves model names of all connected ZWO ASI cameras. 
+    Type :class:`list` of :class:`str`.
+    """
     r = []
     for id_ in range(get_num_cameras()):
         r.append(_get_camera_property(id_)['Name'])
@@ -31,35 +37,43 @@ def list_cameras():
 
 
 class ZWO_Error(Exception):
-    """Exception class for errors returned from the :mod:`zwoasi` module."""
+    """
+    Exception class for errors returned from the :mod:`zwoasi` module.
+    """
     def __init__(self, message):
         Exception.__init__(self, message)
 
 
 class ZWO_IOError(ZWO_Error):
-    """Exception class for all errors returned from the ASI SDK library."""
+    """
+    Exception class for all errors returned from the ASI SDK library.
+    """
     def __init__(self, message, error_code=None):
         ZWO_Error.__init__(self, message)
         self.error_code = error_code
 
 
 class ZWO_CaptureError(ZWO_Error):
-    """Exception class for when :func:`Camera.capture()` fails."""
+    """
+    Exception class for when :func:`Camera.capture()` fails.
+    """
     def __init__(self, message, exposure_status=None):
         ZWO_Error.__init__(self, message)
         self.exposure_status = exposure_status
 
 
 class Camera(object):
-    """Representation of ZWO ASI camera.
+    """
+    Representation of ZWO ASI camera.
 
     The constructor for a camera object requires the camera ID number or model. The camera destructor automatically
-    closes the camera."""
+    closes the camera.
+    """
     default_timeout = -1
     ready = False
-    def __init__(self, id):
+    def __init__(self, cam_id):
         
-        self.id = id
+        self.id = cam_id
         self.detect_camera()
     
     def detect_camera(self):
@@ -158,16 +172,19 @@ class Camera(object):
         return _get_trigger_output_io_conf(self.id, pin)
 
     def get_roi(self):
-        """Retrieves the region of interest (ROI).
+        """
+        Retrieves the region of interest (ROI).
 
-        Returns a :class:`tuple` containing ``(start_x, start_y, width, height)``."""
+        Returns a :class:`tuple` containing ``(start_x, start_y, width, height)``.
+        """
         xywh = self.get_roi_start_position()
         whbi = self.get_roi_format()
         xywh.extend(whbi[0:2])
         return xywh
 
     def set_roi(self, start_x=None, start_y=None, width=None, height=None, bins=None, image_type=None):
-        """Set the region of interest (ROI).
+        """
+        Set the region of interest (ROI).
 
         If ``bins`` is not given then the current pixel binning value will be used. The ROI coordinates are considered
         after binning has been taken into account, ie if ``bins=2`` then the maximum possible height is reduced by a
@@ -178,7 +195,8 @@ class Camera(object):
         if this is not the case.
 
         If ``start_x=None`` then the ROI will be horizontally centred. If ``start_y=None`` then the ROI will be
-        vertically centred."""
+        vertically centred.
+        """
         self.width = width
         self.height = height
         self.n_bins = bins
@@ -218,14 +236,20 @@ class Camera(object):
         return _get_control_value(self.id, control_type)
 
     def set_control_value(self, control_type, value, auto=False):
-        _set_control_value(self.id, control_type, value, auto)
+        if not self.closed:
+            _set_control_value(self.id, control_type, value, auto)
     
     def get_bin(self):
-        """Retrieves the pixel binning. Type :class:`int`.
+        """
+        Retrieves the pixel binning. 
 
         A pixel binning of one means no binning is active, a value of 2 indicates two pixels horizontally and two
-        pixels vertically are binned."""
-        return self.get_roi_format()[2]
+        pixels vertically are binned.
+        
+        Type :class:`int`.
+        """
+        bin_size = self.get_roi_format()[2]
+        return bin_size
 
     def start_exposure(self, is_dark=False):
         _start_exposure(self.id, is_dark)
@@ -333,103 +357,143 @@ class Camera(object):
         return _stop_video_capture(self.id)
     
     def capture_video_frame(self, buffer_=None, filename=None, timeout=None):
-        """Capture a single frame from video. Type :class:`numpy.ndarray`.
+        """
+        Capture a single frame from video. 
 
         Video mode must have been started previously otherwise a :class:`ZWO_Error` will be raised. A new buffer
         will be used to store the image unless one has been supplied with the `buffer` keyword argument.
         If `filename` is not ``None`` the image is saved using :py:meth:`PIL.Image.Image.save()`.
         :func:`capture_video_frame()` will wait indefinitely unless a `timeout` has been given.
-        The SDK suggests that the `timeout` value, in milliseconds, should be twice the exposure plus 500 ms."""
-        data = self.get_video_data(buffer_=buffer_, timeout=timeout)
-        whbi = self.get_roi_format()
-        shape = [whbi[1], whbi[0]]
-        if whbi[3] == ASI_IMG_RAW8 or whbi[3] == ASI_IMG_Y8:
-            img = np.frombuffer(data, dtype=np.uint8)
-        elif whbi[3] == ASI_IMG_RAW16:
-            img = np.frombuffer(data, dtype=np.uint16)
-        elif whbi[3] == ASI_IMG_RGB24:
-            img = np.frombuffer(data, dtype=np.uint8)
-            shape.append(3)
-        else:
-            raise ValueError('Unsupported image type')
-        img = img.reshape(shape)
-
-        if filename is not None:
-            from PIL import Image
-            mode = None
-            if len(img.shape) == 3:
-                img = img[:, :, ::-1]  # Convert BGR to RGB
-            if whbi[3] == ASI_IMG_RAW16:
-                mode = 'I;16'
-            image = Image.fromarray(img, mode=mode)
-            image.save(filename)
-            logger.debug('wrote %s', filename)
-
-        return img
+        The SDK suggests that the `timeout` value, in milliseconds, should be twice the exposure plus 500 ms.
+        
+        Type :class:`numpy.ndarray`.
+        """
+        if not self.closed:
+            data = self.get_video_data(buffer_=buffer_, timeout=timeout)
+            whbi = self.get_roi_format()
+            shape = [whbi[1], whbi[0]]
+            if whbi[3] == ASI_IMG_RAW8 or whbi[3] == ASI_IMG_Y8:
+                img = np.frombuffer(data, dtype=np.uint8)
+            elif whbi[3] == ASI_IMG_RAW16:
+                img = np.frombuffer(data, dtype=np.uint16)
+            elif whbi[3] == ASI_IMG_RGB24:
+                img = np.frombuffer(data, dtype=np.uint8)
+                shape.append(3)
+            else:
+                raise ValueError('Unsupported image type')
+            img = img.reshape(shape)
+    
+            if filename is not None:
+                from PIL import Image
+                mode = None
+                if len(img.shape) == 3:
+                    img = img[:, :, ::-1]  # Convert BGR to RGB
+                if whbi[3] == ASI_IMG_RAW16:
+                    mode = 'I;16'
+                image = Image.fromarray(img, mode=mode)
+                image.save(filename)
+                logger.debug('wrote %s', filename)
+    
+            return img
 
     def get_control_values(self):
-        controls = self.get_controls()
-        r = {}
-        for k in controls:
-            r[k] = self.get_control_value(controls[k]['ControlType'])[0]
-        return r
+        """
+        
 
-    def auto_exposure(self, on = True):
-        controls = self.get_controls()
-        r = []
-        auto=('Exposure', 'Gain')
-        self.set_control_value(controls['AutoExpMaxExpMS']['ControlType'], 
-                               controls['AutoExpMaxExpMS']['MaxValue'])
+        Returns
+        -------
+        r : dictionnary of controls 
+            DESCRIPTION.
 
-        if on: 
-            for ctrl in auto:
-                if ctrl == 'BandWidth':
-                   continue  # auto setting is supported but is not an exposure setting
-                if ctrl in controls and controls[ctrl]['IsAutoSupported']:
-                    self.set_control_value(controls[ctrl]['ControlType'],
-                                           controls[ctrl]['DefaultValue'],
-                                           auto=on)
-                    r.append(ctrl)
-        if not on: 
-           self.get_gain()
-           self.set_gain()
-           self.get_exp()
-           self.set_exp()
-               
-        return r
+        """
+        if not self.closed:
+            controls = self.get_controls()
+            r = {}
+            for k in controls:
+                r[k] = self.get_control_value(controls[k]['ControlType'])[0]
+            return r
+
+    def auto_exposure(self, on = True,  auto=('Exposure', 'Gain')):
+        """
+        
+
+        Parameters
+        ----------
+        on : TYPE, optional
+            DESCRIPTION. The default is True.
+        auto : TYPE, optional
+            DESCRIPTION. The default is ('Exposure', 'Gain').
+
+        Returns
+        -------
+        r : TYPE
+            DESCRIPTION.
+
+        """
+        if not self.closed:
+            controls = self.get_controls()
+            r = []
+           
+            self.set_control_value(controls['AutoExpMaxExpMS']['ControlType'], 
+                                   controls['AutoExpMaxExpMS']['MaxValue'])
+    
+            if on: 
+                for ctrl in auto:
+                    if ctrl == 'BandWidth':
+                       continue  # auto setting is supported but is not an exposure setting
+                    if ctrl in controls and controls[ctrl]['IsAutoSupported']:
+                        self.set_control_value(controls[ctrl]['ControlType'],
+                                               controls[ctrl]['DefaultValue'],
+                                               auto=on)
+                        r.append(ctrl)
+            if not on: 
+               self.get_gain()
+               self.set_gain()
+               self.get_exp()
+               self.set_exp()
+                   
+            return r
         
 
     def auto_wb(self, wb=('WB_B', 'WB_R')):
         return self.auto_exposure(auto=wb)
 
     def set_exp(self): 
-        self.set_control_value(ASI_EXPOSURE, self.exposure, auto=False)
+        if not self.closed:
+            self.set_control_value(ASI_EXPOSURE, self.exposure, auto=False)
     def get_exp(self): 
-        self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
+        if not self.closed:
+            self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
         #print('exp =', self.exposure)
         return self.exposure
     def set_gain(self): 
-        self.set_control_value(ASI_GAIN, self.gain, auto=False)
+        if not self.closed:
+            self.set_control_value(ASI_GAIN, self.gain, auto=False)
     def get_gain(self): 
-        self.gain = self.get_control_value(ASI_GAIN)[0]
+        if not self.closed:
+            self.gain = self.get_control_value(ASI_GAIN)[0]
         #print('gain =', self.gain)
         return self.gain
         
     def set_autoexp_off(self):
-        self.get_gain()
-        self.set_gain()
-        self.get_exp()
-        self.set_exp()
+        if not self.closed:
+            self.get_gain()
+            self.set_gain()
+            self.get_exp()
+            self.set_exp()
     
     def close(self):
-        """Close the camera in the ASI library.
+        """
+        Close the camera in the ASI library.
     
-        The destructor will automatically close the camera if it has not already been closed."""
+        The destructor will automatically close the camera if it has not already been closed.
+        """
         try:
             _close_camera(self.id)
         finally:
             self.closed = True
-    
+        time.sleep(0.1)
+        
     def __del__(self):
         self.close()
         

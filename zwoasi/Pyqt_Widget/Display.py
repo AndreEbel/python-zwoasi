@@ -11,7 +11,8 @@ import cv2
 from PyQt5.QtCore import pyqtSlot, Qt
 import numpy as np
 
-class Display(QWidget):
+class Display_base(QWidget):
+    closed = False
     def __init__(self, VideoThread, w, h):
         super().__init__()
         self.display_thread = VideoThread
@@ -47,14 +48,18 @@ class Display(QWidget):
         self.setLayout(self.vbox)
         
         # flags
-        self.started = False
+        #self.started = False
+        self.display_thread.camera.set_camera()
+        # start the thread
+        self.display_thread.start()
+    
+        #if self.started == False:
+        # create a grey pixmap
+        grey = QPixmap(self.display_width, self.display_height)
+        grey.fill(QColor('darkGray'))
+        # set the image image to the grey pixmap
+        self.image_label.setPixmap(grey)
         
-        if self.started == False:
-            # create a grey pixmap
-            grey = QPixmap(self.display_width, self.display_height)
-            grey.fill(QColor('darkGray'))
-            # set the image image to the grey pixmap
-            self.image_label.setPixmap(grey)
     
     def convert_cv_qt(self, cv_img):
         """Convert from an opencv image to QPixmap"""
@@ -77,7 +82,7 @@ class Display(QWidget):
     # Activates when Start/Stop video button is clicked to Start (ss_video
     def ClickStartVideo(self):
         self.ss_video.clicked.disconnect(self.ClickStartVideo)
-        self.started = True
+        #self.started = True
         
         # update labels
         self.textLabel1.setText('Video running')
@@ -88,19 +93,19 @@ class Display(QWidget):
         self.ss_video.setText('Stop video')
         
         # start the thread
-        self.display_thread.start()
+        #self.display_thread.start()
         
         self.display_thread.display_frame.connect(self.update_image)
         #self.display_thread.save_frame.connect(self.save_image)
         # Stop the video if button clicked
-        self.ss_video.clicked.connect(self.display_thread.stop)  
+        #self.ss_video.clicked.connect(self.display_thread.stop)  
         self.ss_video.clicked.connect(self.ClickStopVideo)
     
     # Activates when Start/Stop video button is clicked to Stop (ss_video)
     def ClickStopVideo(self):
         self.display_thread.display_frame.disconnect()
         #self.display_thread.save_frame.disconnect()
-        self.ss_video.clicked.disconnect(self.display_thread.stop)
+        #self.ss_video.clicked.disconnect(self.display_thread.stop)
         self.ss_video.clicked.disconnect(self.ClickStopVideo)
         
         self.ss_video.setText('Start video')
@@ -110,8 +115,20 @@ class Display(QWidget):
         # Start the video if button clicked
         self.ss_video.clicked.connect(self.ClickStartVideo)
     
-    def closeEvent(self, event):
-        if self.display_thread.display: 
-            self.display_thread.stop()
+    @pyqtSlot()
+    def closing(self):
         self.display_thread.camera.close()
-        event.accept()        
+        if self.display_thread.camera.closed:
+            print('camera has been closed')
+            
+class Display(Display_base):
+    
+    def __init__(self, VideoThread, w, h):
+        super().__init__(VideoThread, w, h)
+    def closeEvent(self, event):
+        if self.display_thread.camera.ready: 
+            self.display_thread.stop()
+        if self.display_thread.camera.closed:
+            print('closing')
+            self.closed = True
+            event.accept()        
