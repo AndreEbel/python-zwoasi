@@ -22,7 +22,10 @@ class Display_base(QWidget):
         self.display_width = w
         self.display_height = h
         self.image_label = QLabel(self)
-        self.image_label.resize(self.display_width, self.display_height)
+        self.image_label.setMinimumSize(self.display_width, self.display_height)
+        self.image_label.adjustSize()
+        #self.image_label.setScaledContents(True)
+        #self.image_label.resize(self.display_width, self.display_height)
         self.image_label.setAlignment(Qt.AlignCenter)
         
         self.display_box =  QVBoxLayout()
@@ -47,28 +50,28 @@ class Display_base(QWidget):
         # set the vbox layout as the widgets layout
         self.setLayout(self.vbox)
         
-        # flags
-        #self.started = False
+        # initialize the camera
         self.display_thread.camera.set_camera()
         # start the thread
         self.display_thread.start()
     
-        #if self.started == False:
+
         # create a grey pixmap
-        grey = QPixmap(self.display_width, self.display_height)
-        grey.fill(QColor('darkGray'))
+        self.pixmap = QPixmap(self.display_width, self.display_height)
+        self.pixmap.fill(QColor('darkGray'))
         # set the image image to the grey pixmap
-        self.image_label.setPixmap(grey)
+        self.image_label.setPixmap(self.pixmap.scaled(self.image_label.size()))
         
     
     def convert_cv_qt(self, cv_img):
         """Convert from an opencv image to QPixmap"""
         rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_image.shape
+        #print(h, w, self.image_label.size())
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(self.display_width, self.display_height, Qt.KeepAspectRatio)
-        return QPixmap.fromImage(p)
+        p = QPixmap.fromImage(convert_to_Qt_format)
+        return p
     
     @pyqtSlot(np.ndarray)
     def update_image(self, cv_img):
@@ -76,42 +79,33 @@ class Display_base(QWidget):
         Updates the image_label with a new opencv image
         """
         self.frame = cv_img
-        qt_img = self.convert_cv_qt(cv_img)
-        self.image_label.setPixmap(qt_img)
+        self.pixmap = self.convert_cv_qt(cv_img)
+        self.image_label.setPixmap(self.pixmap.scaled(
+            self.image_label.width(),self.image_label.height(),
+            Qt.KeepAspectRatio, 
+            Qt.FastTransformation))
     
     # Activates when Start/Stop video button is clicked to Start (ss_video
     def ClickStartVideo(self):
         self.ss_video.clicked.disconnect(self.ClickStartVideo)
-        #self.started = True
         
         # update labels
         self.textLabel1.setText('Video running')
-        #self.textLabel2.setText('Filename required')
-        #self.textLabel3.setText('Period (s) required')
 
         # Change button to stop
         self.ss_video.setText('Stop video')
         
-        # start the thread
-        #self.display_thread.start()
-        
         self.display_thread.display_frame.connect(self.update_image)
-        #self.display_thread.save_frame.connect(self.save_image)
-        # Stop the video if button clicked
-        #self.ss_video.clicked.connect(self.display_thread.stop)  
+        # Stop the video if button clicked  
         self.ss_video.clicked.connect(self.ClickStopVideo)
     
     # Activates when Start/Stop video button is clicked to Stop (ss_video)
     def ClickStopVideo(self):
         self.display_thread.display_frame.disconnect()
-        #self.display_thread.save_frame.disconnect()
-        #self.ss_video.clicked.disconnect(self.display_thread.stop)
         self.ss_video.clicked.disconnect(self.ClickStopVideo)
         
         self.ss_video.setText('Start video')
         self.textLabel1.setText('Ready to start')
-        #self.textLabel2.setText('No video')
-        #self.textLabel3.setText('No video')
         # Start the video if button clicked
         self.ss_video.clicked.connect(self.ClickStartVideo)
     
@@ -129,6 +123,6 @@ class Display(Display_base):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()
         if self.display_thread.camera.closed:
-            print('closing')
+            print('camera closed')
             self.closed = True
             event.accept()        

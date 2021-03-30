@@ -22,17 +22,42 @@ from .DisplayAdvanced import DisplayAdvanced_base
 from zwoasi.videothread import VideoThread
 
 class TwoCam(QWidget):
-    def __init__(self):
+    def __init__(self, w = 2000, h =2000, b=1):
         super().__init__()
         
         self.cam1 = asi.Camera(0)
         self.cam2 = asi.Camera(1)
-        self.cam1.set_roi(width=1000,
-                            height=1000,
-                            bins=2)
-        self.cam2.set_roi(width=1000,
-                            height=1000,
-                            bins=2)
+        # it is assumed the camera are the same 
+        if b: 
+            if b in self.cam1.get_camera_property()['SupportedBins']: 
+                bins = b
+        else:
+            bins = 1
+        if w: 
+            if w < (self.cam1.get_camera_property()['MaxWidth'])/bins: 
+                width = w
+            else: 
+                width = (self.cam1.get_camera_property()['MaxWidth'])/bins
+        else: 
+            width =self.cam1.get_camera_property()['MaxWidth']/bins
+        if h: 
+            if h < (self.cam1.get_camera_property()['MaxHeight'])/bins: 
+                height = h 
+            else: 
+                height = (self.cam1.get_camera_property()['MaxHeight'])/bins
+        else: 
+            height  = self.cam1.get_camera_property()['MaxHeight']/bins
+        width -= width % 8  # Must be a multiple of 8
+        height -= height % 8  # Must be a multiple of 8
+        width = int(width)
+        height = int(height)
+        print(width, height, bins)
+        self.cam1.set_roi(width= width,
+                          height = height,
+                          bins = bins)
+        self.cam2.set_roi(width= width,
+                          height = height,
+                          bins = bins)
         self.vt1 = VideoThread(self.cam1)
         self.vt2 = VideoThread(self.cam2)
         self.w1 = DisplayAdvanced_base(self.vt1, 500, 500)
@@ -53,6 +78,8 @@ class TwoCam(QWidget):
         # print('all cameras are closed')
         
     def closeEvent(self, event):
+        print(self.cam1.get_camera_property())
+        print(self.cam2.get_camera_property())
         print('trying to close properly')
         if self.vt1.camera.ready: 
             self.vt1.stop()

@@ -90,6 +90,6 @@ class DisplayAdvanced(DisplayAdvanced_base):
             self.display_thread.stop()
             self.display_thread.camera.close()
         if self.display_thread.camera.closed:
-            print('closing')
+            print('camera closed')
             self.closed = True
             event.accept()        

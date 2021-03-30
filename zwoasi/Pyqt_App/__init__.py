@@ -52,7 +52,7 @@ def ZwoDisplaySave(cam_id = 0):
     a.show()
     app.exec_()
     
-def ZwoDisplayAdvanced(cam_id = 0):
+def ZwoDisplayAdvanced(cam_id = 0, w = 2000, h =2000, b=1):
     """
     Camera display with save options and exposure/gain settings 
 
@@ -66,15 +66,38 @@ def ZwoDisplayAdvanced(cam_id = 0):
     if app is None:
         app = QApplication(sys.argv)
     Cam = asi.Camera(cam_id)
-    Cam.set_roi(width=1000,
-                height=1000,
-                bins=2)
+    if b: 
+        if b in Cam.get_camera_property()['SupportedBins']: 
+            bins = int(b)
+    else:
+        bins = 1
+    if w: 
+        if w < int(Cam.get_camera_property()['MaxWidth']/bins): 
+            width = int(w)
+        else: 
+            width = int(Cam.get_camera_property()['MaxWidth']/bins)
+    else: 
+        width = int(Cam.get_camera_property()['MaxWidth']/bins)
+        
+    if h: 
+        if h < int(Cam.get_camera_property()['MaxHeight']/bins): 
+            height = int(h)
+        else: 
+            height = int(Cam.get_camera_property()['MaxHeight']/bins)
+    else: 
+        height  = int(Cam.get_camera_property()['MaxHeight']/bins)
+    width -= width % 8  # Must be a multiple of 8
+    height -= height % 8  # Must be a multiple of 8
+    print(width, height, bins)
+    Cam.set_roi(width =width,
+                height = height,
+                bins= bins)
     Video = VideoThread(Cam)
-    a = DisplayAdvanced(Video,500, 500)
+    a = DisplayAdvanced(Video,100, 100)
     a.show()
     app.exec_()
     
-def ZwoDisplayAdvancedHist(cam_id = 0):
+def ZwoDisplayAdvancedHist(cam_id = 0, w = 2000, h =2000, b=1):
     """
     Camera display with: 
         - save options
@@ -91,11 +114,30 @@ def ZwoDisplayAdvancedHist(cam_id = 0):
     if app is None:
         app = QApplication(sys.argv)
     Cam = asi.Camera(cam_id)
-    Cam.set_roi(width=1000,
-                height=1000,
-                bins=2)
+    if b: 
+        if b in Cam.get_camera_property()['SupportedBins']: 
+            bins = b
+    else:
+        bins = 1
+    if w: 
+        if w < (Cam.get_camera_property()['MaxWidth'])/bins: 
+            width = w
+        else: 
+            width = (Cam.get_camera_property()['MaxWidth'])/bins
+    else: 
+        width = Cam.get_camera_property()['MaxWidth']/bins
+    if h: 
+        if h < (Cam.get_camera_property()['MaxHeight'])/bins: 
+            height = h 
+        else: 
+            height = (Cam.get_camera_property()['MaxHeight'])/bins
+    else: 
+        height  = Cam.get_camera_property()['MaxHeight']/bins
+    Cam.set_roi(width,
+                height,
+                bins)
     Video = VideoThread(Cam)
-    a = DisplayAdvancedHist(Video, 500, 500)
+    a = DisplayAdvancedHist(Video, 100, 100)
     a.show()
     app.exec_()  
 
@@ -161,12 +203,12 @@ def ZwoMultiCam(cam_ids = None, verbose = False):
     
     MultiWidget(widgets)
 
-def ZwoTwoCam():
+def ZwoTwoCam(w = 2000, h =2000, b=1):
     app = QtCore.QCoreApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
     
-    a = TwoCam()
+    a = TwoCam(w , h , b)
     a.show()
     #app.aboutToQuit.connect(a.closeCameras)
     app.exec_()

@@ -4,12 +4,9 @@ from time import sleep, time_ns
 
 
 class VideoThread(QThread):
-    #exposure = None
-    #gain = None
     auto_exp = False
     save = False
     record = False
-    #display = False
     display_frame = pyqtSignal(np.ndarray)
     save_frame = pyqtSignal(np.ndarray)
     
@@ -18,8 +15,7 @@ class VideoThread(QThread):
         self.camera = camera
 
     def run(self):
-        # capture from web cam
-        #self.camera.set_camera()
+        # camera should be initialized before starting the thread
         t_save = -1e30
         while self.camera.ready and not self.camera.closed:
            
