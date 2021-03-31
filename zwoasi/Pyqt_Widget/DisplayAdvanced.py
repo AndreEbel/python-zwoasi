@@ -1,13 +1,18 @@
 from .DisplaySave import DisplaySave_base
-from PyQt5.QtWidgets import QLineEdit,QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QLineEdit,QHBoxLayout, QPushButton, QWidget, QVBoxLayout
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtCore import Qt
-from time import sleep
+# from time import sleep
 
 class DisplayAdvanced_base(DisplaySave_base):
-    def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread,  w, h)
+    def __init__(self, VideoThread, w, h, title):
+        super().__init__(VideoThread,  w, h, title)
         
+        # Add tabs
+        self.tab2 = QWidget()
+        self.tabs.addTab(self.tab2, "Camera settings")
+        self.tab2.layout = QVBoxLayout()
+        #self.tab2.layout.addStretch(1)
         
         # exposure
         self.exposure =None
@@ -30,7 +35,6 @@ class DisplayAdvanced_base(DisplaySave_base):
         self.gain_input = QLineEdit()
         self.gain_input.setValidator(QIntValidator())
         self.gain_input.setMaxLength(4)
-        
         self.gain_input.setAlignment(Qt.AlignRight)
         self.gain_button = QPushButton('Set gain',self)
         self.gain_button.clicked.connect(self.ClickSetGain)
@@ -39,9 +43,15 @@ class DisplayAdvanced_base(DisplaySave_base):
         hbox_gain.addWidget(self.gain_input)
         hbox_gain.addWidget(self.gain_button)
         
-        # Add the new function to the layout       
-        self.settings_box.addLayout(hbox_exp)
-        self.settings_box.addLayout(hbox_gain)
+        # Add the new function to the layout     
+        # Add the new function to the layout  
+        
+        self.tab2.layout.addLayout(hbox_exp)
+        self.tab2.layout.addLayout(hbox_gain)
+        self.tab2.setLayout(self.tab2.layout)
+        
+        # self.settings_box.addLayout(hbox_exp)
+        # self.settings_box.addLayout(hbox_gain)
         
         # refresh the widget layout
         self.setLayout(self.vbox)
@@ -84,7 +94,7 @@ class DisplayAdvanced_base(DisplaySave_base):
 
 class DisplayAdvanced(DisplayAdvanced_base):
     def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread,  w, h)
+        super().__init__(VideoThread,  w, h, "Zwo camera display")
     def closeEvent(self, event):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()

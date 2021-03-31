@@ -7,7 +7,7 @@ Created on Tue Mar  9 19:04:32 2021
 
 from .Display import Display_base
 
-from PyQt5.QtWidgets import QLineEdit, QLabel,QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QLineEdit,QTabWidget, QWidget,QLabel,QHBoxLayout,QVBoxLayout, QPushButton
 from PyQt5.QtGui import QIntValidator
 import cv2
 from PyQt5.QtCore import pyqtSlot, Qt
@@ -16,9 +16,19 @@ from time import time_ns, sleep
 import os
 
 class DisplaySave_base(Display_base):
-    def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread,  w, h)
-      
+    def __init__(self, VideoThread, w, h, title):
+        super().__init__(VideoThread,  w, h, title)
+        
+        # Initialize tab screen
+        self.tabs = QTabWidget()
+        self.tabs.setMaximumHeight(100)
+        #self.tabs.adjustSize()
+        # Add tabs
+        self.tab1 = QWidget()
+        self.tabs.addTab(self.tab1, "Save options")
+        self.tab1.layout = QVBoxLayout()
+        #self.tab1.layout.addStretch(1)
+        
         # 3rd row: Set filename and save button
         self.filename = None
         self.filename_input = QLineEdit()
@@ -55,10 +65,13 @@ class DisplaySave_base(Display_base):
         hbox3.addWidget(self.textLabel3)
         hbox3.addWidget(self.record_button)
         
-        # Add the new function to the layout       
-        self.settings_box.addLayout(hbox2)
-        self.settings_box.addLayout(hbox3)
-
+        # Add the new function to the layout  
+        
+        self.tab1.layout.addLayout(hbox2)
+        self.tab1.layout.addLayout(hbox3)
+        self.tab1.setLayout(self.tab1.layout)
+        
+        self.settings_box.addWidget(self.tabs)
         # refresh the widget layout
         self.setLayout(self.vbox)
         
@@ -141,6 +154,7 @@ class DisplaySave_base(Display_base):
                     print('folder ok')
                     self.display_thread.record = True
                     # update labels
+                    self.textLabel1.setText('Saving frames')
                     self.textLabel3.setText('Saving frames')
                     # Change button to stop
                     self.record_button.setText('Stop recording')
@@ -157,6 +171,7 @@ class DisplaySave_base(Display_base):
         self.record_button.clicked.disconnect(self.ClickStopRecording)
         self.display_thread.save = False
         self.display_thread.record = False
+        self.textLabel1.setText('Video running')
         self.textLabel3.setText('Recording thread stopped')
         sleep(0.1)
         self.textLabel3.setText('Ready to record')
@@ -167,7 +182,7 @@ class DisplaySave_base(Display_base):
         
 class DisplaySave(DisplaySave_base):
     def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread,  w, h)
+        super().__init__(VideoThread,  w, h, "Zwo camera display")
     def closeEvent(self, event):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()

@@ -74,7 +74,8 @@ class Camera(object):
     def __init__(self, cam_id):
         
         self.id = cam_id
-        self.detect_camera()
+        if self.id != None: 
+            self.detect_camera()
     
     def detect_camera(self):
         # find the camera
@@ -108,19 +109,20 @@ class Camera(object):
         
     def set_camera(self):
         # initialization of the camera
-        self.detect_camera()
-        self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
-        self.gain = self.get_control_value(ASI_GAIN)[0]
-        #print('exp gain', self.exposure, self.gain)
-       
-        self.set_image_type(ASI_IMG_RAW8)
-        self.set_control_value(ASI_BANDWIDTHOVERLOAD,
-                                      self.get_controls()['BandWidth']['MinValue'])
-        self.set_roi(width=self.width,
-                            height=self.height,
-                            bins=self.n_bins)
-        self.start_video_capture()
-        self.ready= True
+        if self.id != None: 
+            self.detect_camera()
+            self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
+            self.gain = self.get_control_value(ASI_GAIN)[0]
+            #print('exp gain', self.exposure, self.gain)
+           
+            self.set_image_type(ASI_IMG_RAW8)
+            self.set_control_value(ASI_BANDWIDTHOVERLOAD,
+                                          self.get_controls()['BandWidth']['MinValue'])
+            self.set_roi(width=self.width,
+                                height=self.height,
+                                bins=self.n_bins)
+            self.start_video_capture()
+            self.ready= True
     
     def get_camera_property(self):
         return _get_camera_property(self.id)

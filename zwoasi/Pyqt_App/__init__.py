@@ -66,34 +66,35 @@ def ZwoDisplayAdvanced(cam_id = 0, w = 2000, h =2000, b=1):
     if app is None:
         app = QApplication(sys.argv)
     Cam = asi.Camera(cam_id)
-    if b: 
-        if b in Cam.get_camera_property()['SupportedBins']: 
-            bins = int(b)
-    else:
-        bins = 1
-    if w: 
-        if w < int(Cam.get_camera_property()['MaxWidth']/bins): 
-            width = int(w)
+    if cam_id != None:
+        if b: 
+            if b in Cam.get_camera_property()['SupportedBins']: 
+                bins = int(b)
+        else:
+            bins = 1
+        if w: 
+            if w < int(Cam.get_camera_property()['MaxWidth']/bins): 
+                width = int(w)
+            else: 
+                width = int(Cam.get_camera_property()['MaxWidth']/bins)
         else: 
             width = int(Cam.get_camera_property()['MaxWidth']/bins)
-    else: 
-        width = int(Cam.get_camera_property()['MaxWidth']/bins)
-        
-    if h: 
-        if h < int(Cam.get_camera_property()['MaxHeight']/bins): 
-            height = int(h)
+            
+        if h: 
+            if h < int(Cam.get_camera_property()['MaxHeight']/bins): 
+                height = int(h)
+            else: 
+                height = int(Cam.get_camera_property()['MaxHeight']/bins)
         else: 
-            height = int(Cam.get_camera_property()['MaxHeight']/bins)
-    else: 
-        height  = int(Cam.get_camera_property()['MaxHeight']/bins)
-    width -= width % 8  # Must be a multiple of 8
-    height -= height % 8  # Must be a multiple of 8
-    print(width, height, bins)
-    Cam.set_roi(width =width,
-                height = height,
-                bins= bins)
+            height  = int(Cam.get_camera_property()['MaxHeight']/bins)
+        width -= width % 8  # Must be a multiple of 8
+        height -= height % 8  # Must be a multiple of 8
+        print(width, height, bins)
+        Cam.set_roi(width =width,
+                    height = height,
+                    bins= bins)
     Video = VideoThread(Cam)
-    a = DisplayAdvanced(Video,100, 100)
+    a = DisplayAdvanced(Video,200, 200)
     a.show()
     app.exec_()
     
@@ -114,28 +115,32 @@ def ZwoDisplayAdvancedHist(cam_id = 0, w = 2000, h =2000, b=1):
     if app is None:
         app = QApplication(sys.argv)
     Cam = asi.Camera(cam_id)
-    if b: 
-        if b in Cam.get_camera_property()['SupportedBins']: 
-            bins = b
-    else:
-        bins = 1
-    if w: 
-        if w < (Cam.get_camera_property()['MaxWidth'])/bins: 
-            width = w
+    if cam_id != None:
+        if b: 
+            if b in Cam.get_camera_property()['SupportedBins']: 
+                bins = b
+        else:
+            bins = 1
+        if w: 
+            if w < (Cam.get_camera_property()['MaxWidth'])/bins: 
+                width = w
+            else: 
+                width = (Cam.get_camera_property()['MaxWidth'])/bins
         else: 
-            width = (Cam.get_camera_property()['MaxWidth'])/bins
-    else: 
-        width = Cam.get_camera_property()['MaxWidth']/bins
-    if h: 
-        if h < (Cam.get_camera_property()['MaxHeight'])/bins: 
-            height = h 
+            width = Cam.get_camera_property()['MaxWidth']/bins
+        if h: 
+            if h < (Cam.get_camera_property()['MaxHeight'])/bins: 
+                height = h 
+            else: 
+                height = (Cam.get_camera_property()['MaxHeight'])/bins
         else: 
-            height = (Cam.get_camera_property()['MaxHeight'])/bins
-    else: 
-        height  = Cam.get_camera_property()['MaxHeight']/bins
-    Cam.set_roi(width,
-                height,
-                bins)
+            height  = Cam.get_camera_property()['MaxHeight']/bins
+        width -= width % 8  # Must be a multiple of 8
+        height -= height % 8  # Must be a multiple of 8
+        print(width, height, bins)
+        Cam.set_roi(width,
+                    height,
+                    bins)
     Video = VideoThread(Cam)
     a = DisplayAdvancedHist(Video, 100, 100)
     a.show()

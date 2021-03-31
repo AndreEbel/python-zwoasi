@@ -13,10 +13,10 @@ import numpy as np
 
 class Display_base(QWidget):
     closed = False
-    def __init__(self, VideoThread, w, h):
+    def __init__(self, VideoThread, w, h, title):
         super().__init__()
         self.display_thread = VideoThread
-        self.setWindowTitle("Qt live label demo")
+        self.setWindowTitle(title)
         
         # 1st row: Display
         self.display_width = w
@@ -24,12 +24,11 @@ class Display_base(QWidget):
         self.image_label = QLabel(self)
         self.image_label.setMinimumSize(self.display_width, self.display_height)
         self.image_label.adjustSize()
-        #self.image_label.setScaledContents(True)
-        #self.image_label.resize(self.display_width, self.display_height)
         self.image_label.setAlignment(Qt.AlignCenter)
         
         self.display_box =  QVBoxLayout()
         self.display_box.addWidget(self.image_label)
+        #self.display_box.addStretch(1)
         
         # 2nd row: Start / stop button
         self.textLabel1 = QLabel('Ready to start')
@@ -41,10 +40,14 @@ class Display_base(QWidget):
         hbox1.addWidget(self.ss_video)
 
         self.settings_box =  QVBoxLayout()
+       
         self.settings_box.addLayout(hbox1)
+        #self.settings_box.addStretch()
         # create a vertical box layout
         self.vbox = QVBoxLayout()
+       
         self.vbox.addLayout(self.display_box)
+        #self.vbox.addStretch(1)
         self.vbox.addLayout(self.settings_box)
 
         # set the vbox layout as the widgets layout
@@ -57,11 +60,16 @@ class Display_base(QWidget):
     
 
         # create a grey pixmap
-        self.pixmap = QPixmap(self.display_width, self.display_height)
+        self.pixmap = QPixmap(100, 100)
         self.pixmap.fill(QColor('darkGray'))
         # set the image image to the grey pixmap
-        self.image_label.setPixmap(self.pixmap.scaled(self.image_label.size()))
-        
+        self.image_label.setPixmap(self.pixmap.scaled(
+                                                        self.image_label.width(),self.image_label.height(),
+                                                        Qt.KeepAspectRatio, 
+                                                        Qt.FastTransformation
+                                                        )
+            )
+                                                    
     
     def convert_cv_qt(self, cv_img):
         """Convert from an opencv image to QPixmap"""
@@ -80,6 +88,7 @@ class Display_base(QWidget):
         """
         self.frame = cv_img
         self.pixmap = self.convert_cv_qt(cv_img)
+        #print(self.image_label.width(),self.image_label.height())
         self.image_label.setPixmap(self.pixmap.scaled(
             self.image_label.width(),self.image_label.height(),
             Qt.KeepAspectRatio, 
@@ -118,7 +127,7 @@ class Display_base(QWidget):
 class Display(Display_base):
     
     def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread, w, h)
+        super().__init__(VideoThread, w, h, "Zwo camera display")
     def closeEvent(self, event):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()
