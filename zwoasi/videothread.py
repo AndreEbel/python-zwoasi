@@ -15,6 +15,7 @@ class VideoThread(QThread):
         self.camera = camera
 
     def run(self):
+        self.camera.start_video_capture()
         # camera should be initialized before starting the thread
         t_save = -1e30
         while self.camera.ready and not self.camera.closed:
@@ -41,6 +42,7 @@ class VideoThread(QThread):
                     t_save = t_i
                 self.save = False
             sleep(self.camera.exposure*1e-6)
+        self.camera.stop_video_capture()
         
     def stop(self):
         """

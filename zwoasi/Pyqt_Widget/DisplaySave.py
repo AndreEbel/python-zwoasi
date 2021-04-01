@@ -7,7 +7,7 @@ Created on Tue Mar  9 19:04:32 2021
 
 from .Display import Display_base
 
-from PyQt5.QtWidgets import QLineEdit,QTabWidget, QWidget,QLabel,QHBoxLayout,QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QLineEdit, QWidget,QLabel,QHBoxLayout,QVBoxLayout, QPushButton
 from PyQt5.QtGui import QIntValidator
 import cv2
 from PyQt5.QtCore import pyqtSlot, Qt
@@ -19,9 +19,7 @@ class DisplaySave_base(Display_base):
     def __init__(self, VideoThread, w, h, title):
         super().__init__(VideoThread,  w, h, title)
         
-        # Initialize tab screen
-        self.tabs = QTabWidget()
-        self.tabs.setMaximumHeight(100)
+        
         #self.tabs.adjustSize()
         # Add tabs
         self.tab1 = QWidget()

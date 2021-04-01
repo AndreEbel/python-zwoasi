@@ -117,11 +117,11 @@ class Camera(object):
            
             self.set_image_type(ASI_IMG_RAW8)
             self.set_control_value(ASI_BANDWIDTHOVERLOAD,
-                                          self.get_controls()['BandWidth']['MinValue'])
-            self.set_roi(width=self.width,
-                                height=self.height,
-                                bins=self.n_bins)
-            self.start_video_capture()
+                                   self.get_controls()['BandWidth']['MinValue'])
+            #self.set_roi(width=self.width,
+            #             height=self.height,
+            #             bins=self.n_bins)
+            #self.start_video_capture()
             self.ready= True
     
     def get_camera_property(self):
@@ -199,29 +199,45 @@ class Camera(object):
         If ``start_x=None`` then the ROI will be horizontally centred. If ``start_y=None`` then the ROI will be
         vertically centred.
         """
-        self.width = width
-        self.height = height
-        self.n_bins = bins
         
         cam_info = self.get_camera_property()
         whbi = self.get_roi_format()
 
         if bins is None:
             bins = whbi[2]
+        elif 'SupportedBins' in cam_info and bins in cam_info['SupportedBins']:
+            bins = int(bins)
         elif 'SupportedBins' in cam_info and bins not in cam_info['SupportedBins']:
-            raise ValueError('Illegal value for bins')
+            bins = 1
+            #raise ValueError('Illegal value for bins')
 
         if image_type is None:
             image_type = whbi[3]
             
-        if width is None:
+        if width: 
+            if width < int(cam_info['MaxWidth']/bins): 
+                width = int(width)
+            else: 
+                width = int(cam_info['MaxWidth']/bins)
+        elif width is None:
             width = int(cam_info['MaxWidth'] / bins)
-            width -= width % 8  # Must be a multiple of 8
 
-        if height is None:
+        if height : 
+            if height < int(cam_info['MaxHeight']/bins): 
+                height = int(height)
+            else: 
+                height = int(cam_info['MaxHeight']/bins)
+        elif height is None:
             height = int(cam_info['MaxHeight'] / bins)
-            height -= height % 2  # Must be a multiple of 2
-
+            
+        width -= width % 8  # Must be a multiple of 8
+        height -= height % 2  # Must be a multiple of 2
+        self.width = width
+        self.height = height
+        self.bins = bins
+        
+        self.set_roi_format(width, height, bins, image_type)
+        
         if start_x is None:
             start_x = int((int(cam_info['MaxWidth'] / bins) - width) / 2)
         if start_x + width > int(cam_info['MaxWidth'] / bins):
@@ -230,8 +246,7 @@ class Camera(object):
             start_y = int((int(cam_info['MaxHeight'] / bins) - height) / 2)
         if start_y + height > int(cam_info['MaxHeight'] / bins):
             raise ValueError('ROI and start position larger than binned sensor height')
-
-        self.set_roi_format(width, height, bins, image_type)
+            
         self.set_roi_start_position(start_x, start_y)
 
     def get_control_value(self, control_type):

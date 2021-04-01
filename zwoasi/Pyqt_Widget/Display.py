@@ -5,7 +5,8 @@ Created on Tue Mar  9 19:04:32 2021
 @author: ebel
 """
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QWidget, QLabel,QVBoxLayout, QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget,QTabWidget, QLabel,QVBoxLayout, QHBoxLayout, QPushButton,QLineEdit
+from PyQt5.QtGui import QIntValidator
 from PyQt5.QtGui import QPixmap,  QColor
 import cv2
 from PyQt5.QtCore import pyqtSlot, Qt
@@ -30,7 +31,8 @@ class Display_base(QWidget):
         self.display_box.addWidget(self.image_label)
         #self.display_box.addStretch(1)
         
-        # 2nd row: Start / stop button
+        # 2nd row: settings 
+        self.settings_box =  QVBoxLayout()
         self.textLabel1 = QLabel('Ready to start')
         self.ss_video = QPushButton('Start video',self)
         self.ss_video.clicked.connect(self.ClickStartVideo)
@@ -38,10 +40,62 @@ class Display_base(QWidget):
         hbox1.addStretch(1)
         hbox1.addWidget(self.textLabel1)
         hbox1.addWidget(self.ss_video)
-
-        self.settings_box =  QVBoxLayout()
-       
         self.settings_box.addLayout(hbox1)
+        
+        # Initialize tab screen
+        self.tabs = QTabWidget()
+        self.tabs.setMaximumHeight(100)
+        self.settings_box.addWidget(self.tabs)
+        # first tab
+        self.tab = QWidget()
+        self.tab.layout = QVBoxLayout()
+        
+        #width, height, and bins 
+        self.widthlabel = QLabel('Width')
+        self.width_input = QLineEdit()
+        self.width_input.setValidator(QIntValidator())
+        self.width_input.setMaxLength(4)
+        self.width_input.setAlignment(Qt.AlignLeft)
+        vbox_width= QVBoxLayout()
+        vbox_width.addWidget(self.widthlabel)
+        vbox_width.addWidget(self.width_input)
+        
+        self.heightlabel = QLabel('Height')
+        self.height_input = QLineEdit()
+        self.height_input.setValidator(QIntValidator())
+        self.height_input.setMaxLength(4)
+        self.height_input.setAlignment(Qt.AlignLeft)
+        vbox_height= QVBoxLayout()
+        vbox_height.addWidget(self.heightlabel)
+        vbox_height.addWidget(self.height_input)
+        
+        self.binslabel = QLabel('Bins')
+        self.bins_input = QLineEdit()
+        self.bins_input.setValidator(QIntValidator())
+        self.bins_input.setMaxLength(1)
+        self.bins_input.setAlignment(Qt.AlignLeft)
+        vbox_bins= QVBoxLayout()
+        vbox_bins.addWidget(self.binslabel)
+        vbox_bins.addWidget(self.bins_input)
+        
+        # initialize the input
+        self.width_input.setText(str(self.display_thread.camera.width))
+        self.height_input.setText(str(self.display_thread.camera.height))
+        self.bins_input.setText(str(self.display_thread.camera.bins))
+        
+        self.size_button = QPushButton('Set image size',self)
+        self.size_button.clicked.connect(self.ClickSetImageSize)
+        hbox_size= QHBoxLayout()
+        hbox_size.addStretch(1)
+        hbox_size.addLayout(vbox_width)
+        hbox_size.addLayout(vbox_height)
+        hbox_size.addLayout(vbox_bins)
+        hbox_size.addWidget(self.size_button)
+        self.tab.layout.addLayout(hbox_size)
+        self.tab.setLayout(self.tab.layout)
+        
+        self.tabs.addTab(self.tab, "Image size")
+        
         #self.settings_box.addStretch()
         # create a vertical box layout
         self.vbox = QVBoxLayout()
@@ -56,7 +110,7 @@ class Display_base(QWidget):
         # initialize the camera
         self.display_thread.camera.set_camera()
         # start the thread
-        self.display_thread.start()
+        #self.display_thread.start()
     
 
         # create a grey pixmap
@@ -103,7 +157,10 @@ class Display_base(QWidget):
 
         # Change button to stop
         self.ss_video.setText('Stop video')
-        
+        # start the thread
+        #self.display_thread.camera.set_camera()
+        self.display_thread.camera.ready= True
+        self.display_thread.start()
         self.display_thread.display_frame.connect(self.update_image)
         # Stop the video if button clicked  
         self.ss_video.clicked.connect(self.ClickStopVideo)
@@ -112,7 +169,8 @@ class Display_base(QWidget):
     def ClickStopVideo(self):
         self.display_thread.display_frame.disconnect()
         self.ss_video.clicked.disconnect(self.ClickStopVideo)
-        
+        # start the thread
+        self.display_thread.stop()
         self.ss_video.setText('Start video')
         self.textLabel1.setText('Ready to start')
         # Start the video if button clicked
@@ -124,6 +182,22 @@ class Display_base(QWidget):
         if self.display_thread.camera.closed:
             print('camera has been closed')
             
+    def ClickSetImageSize(self):
+        w = int(self.width_input.text())
+        h = int(self.height_input.text())
+        b = int(self.bins_input.text())
+        print("stop the camera")
+        self.display_thread.stop()
+        self.display_thread.camera.set_roi(width=w, 
+                                           height=h,
+                                           bins=b)
+        print("restart the camera")
+        self.display_thread.camera.ready= True
+        self.display_thread.start()
+        self.width_input.setText(str(self.display_thread.camera.width))
+        self.height_input.setText(str(self.display_thread.camera.height))
+        self.bins_input.setText(str(self.display_thread.camera.bins))
+        
 class Display(Display_base):
     
     def __init__(self, VideoThread, w, h):
