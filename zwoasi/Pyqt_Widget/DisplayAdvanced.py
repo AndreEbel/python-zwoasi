@@ -43,6 +43,9 @@ class DisplayAdvanced_base(DisplaySave_base):
         hbox_gain.addWidget(self.gain_input)
         hbox_gain.addWidget(self.gain_button)
         
+        # initialization of the gain and exposure input with the current values 
+        self.gain_input.setText(str(self.display_thread.camera.gain))
+        self.exposure_input.setText(str(self.display_thread.camera.exposure))
         # Add the new function to the layout     
         # Add the new function to the layout  
         
@@ -81,11 +84,12 @@ class DisplayAdvanced_base(DisplaySave_base):
         if not self.display_thread.camera.closed:     
             self.auto_exposure_button.clicked.disconnect(self.ClickAutoExposureOff)
             # save exposure settings 
-            print('autoexp off')
+            #print('autoexp off')
             self.display_thread.camera.auto_exposure(on = False)
             #self.display_thread.camera.get_gain()
-            self.gain_input.setText(str(self.display_thread.camera.gain))
+            
             #self.display_thread.camera.get_exp()
+            self.gain_input.setText(str(self.display_thread.camera.gain))
             self.exposure_input.setText(str(self.display_thread.camera.exposure))
             self.display_thread.auto_exp = False
          

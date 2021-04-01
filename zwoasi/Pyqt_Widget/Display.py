@@ -186,12 +186,12 @@ class Display_base(QWidget):
         w = int(self.width_input.text())
         h = int(self.height_input.text())
         b = int(self.bins_input.text())
-        print("stop the camera")
+        #print("stop the camera")
         self.display_thread.stop()
         self.display_thread.camera.set_roi(width=w, 
                                            height=h,
                                            bins=b)
-        print("restart the camera")
+        #print("restart the camera")
         self.display_thread.camera.ready= True
         self.display_thread.start()
         self.width_input.setText(str(self.display_thread.camera.width))
