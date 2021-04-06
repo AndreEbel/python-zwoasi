@@ -8,7 +8,8 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget,QTabWidget, QLabel,QVBoxLayout, QHBoxLayout, QPushButton,QLineEdit
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtGui import QPixmap,  QColor
-import cv2
+#import cv2
+from skimage.color import gray2rgb
 from PyQt5.QtCore import pyqtSlot, Qt
 import numpy as np
 
@@ -127,7 +128,8 @@ class Display_base(QWidget):
     
     def convert_cv_qt(self, cv_img):
         """Convert from an opencv image to QPixmap"""
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        #rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        rgb_image = gray2rgb(cv_img)
         h, w, ch = rgb_image.shape
         #print(h, w, self.image_label.size())
         bytes_per_line = ch * w
