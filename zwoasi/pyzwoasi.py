@@ -111,11 +111,15 @@ class Camera(object):
         # initialization of the camera
         if self.id != None: 
             self.detect_camera()
+            camera_info = self.get_camera_property()
+            if camera_info['IsColorCam']:
+                self.set_image_type(ASI_IMG_RGB24)
+            else:
+                self.set_image_type(ASI_IMG_RAW8)
             self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
             self.gain = self.get_control_value(ASI_GAIN)[0]
             #print('exp gain', self.exposure, self.gain)
            
-            self.set_image_type(ASI_IMG_RAW8)
             self.set_control_value(ASI_BANDWIDTHOVERLOAD,
                                    self.get_controls()['BandWidth']['MinValue'])
             #self.set_roi(width=self.width,
@@ -377,8 +381,8 @@ class Camera(object):
         """
         Capture a single frame from video. 
 
-        Video mode must have been started previously otherwise a :class:`ZWO_Error` will be raised. A new buffer
-        will be used to store the image unless one has been supplied with the `buffer` keyword argument.
+        Video mode must have been started previously otherwise a :class:`ZWO_Error` will be raised. 
+        A new buffer will be used to store the image unless one has been supplied with the `buffer` keyword argument.
         If `filename` is not ``None`` the image is saved using :py:meth:`PIL.Image.Image.save()`.
         :func:`capture_video_frame()` will wait indefinitely unless a `timeout` has been given.
         The SDK suggests that the `timeout` value, in milliseconds, should be twice the exposure plus 500 ms.
@@ -386,6 +390,8 @@ class Camera(object):
         Type :class:`numpy.ndarray`.
         """
         if not self.closed:
+            if not timeout:
+                timeout = (self.get_control_value(ASI_EXPOSURE)[0] / 1000) * 2 + 500
             data = self.get_video_data(buffer_=buffer_, timeout=timeout)
             whbi = self.get_roi_format()
             shape = [whbi[1], whbi[0]]
@@ -691,7 +697,8 @@ def _get_video_data(id_, timeout, buffer_=None):
     
     if r:
         raise zwo_errors[r]
-    return buffer_
+    else: # if r=0: success
+        return buffer_
 
 
 def _pulse_guide_on(id_, direction):
@@ -1098,6 +1105,7 @@ ASI_GUIDE_SOUTH = 1
 ASI_GUIDE_EAST = 2
 ASI_GUIDE_WEST = 3
 
+# ASI_CONTROL_TYPE
 ASI_GAIN = 0
 ASI_EXPOSURE = 1
 ASI_GAMMA = 2
