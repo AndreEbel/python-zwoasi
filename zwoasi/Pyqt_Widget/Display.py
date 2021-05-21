@@ -187,7 +187,7 @@ class Display_base(QWidget):
             print('camera has been closed')
             
     def ClickSetImageSize(self):
-        if (self.width_input.text())&(self.height_input.text())&(self.bins_input.text()):
+        if (self.width_input.text()!=None)&(self.height_input.text()!=None)&(self.bins_input.text()!=None):
             w = int(self.width_input.text())
             h = int(self.height_input.text())
             b = int(self.bins_input.text())
