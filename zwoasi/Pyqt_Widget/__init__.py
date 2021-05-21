@@ -5,7 +5,7 @@ Created on Tue Mar 16 11:25:05 2021
 @author: ebel
 """
 
-from .DisplayAdvanced import DisplayAdvanced
+from .DisplayAdvanced import DisplayAdvanced,DisplayAdvanced_base
 from .DisplaySave import DisplaySave
 from .Display import Display
 from .DisplayAdvancedHist import DisplayAdvancedHist
