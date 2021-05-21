@@ -5,8 +5,8 @@ from PyQt5.QtCore import Qt
 # from time import sleep
 
 class DisplayAdvanced_base(DisplaySave_base):
-    def __init__(self, VideoThread, w, h, title):
-        super().__init__(VideoThread,  w, h, title)
+    def __init__(self, VideoThread, w, h, title, verbose):
+        super().__init__(VideoThread,  w, h, title, verbose)
         
         # Add tabs
         self.tab2 = QWidget()
@@ -62,13 +62,21 @@ class DisplayAdvanced_base(DisplaySave_base):
    
         
     def ClickSetExposure(self):
-        self.display_thread.camera.exposure = int(self.exposure_input.text())
-        self.display_thread.camera.set_exp()
-        
+        if self.exposure_input.text(): 
+            self.display_thread.camera.exposure = int(self.exposure_input.text())
+            self.display_thread.camera.set_exp()
+        else: 
+            if self.verbose: 
+                print('no input')
+            
     
     def ClickSetGain(self):
-        self.display_thread.camera.gain = int(self.gain_input.text())
-        self.display_thread.camera.set_gain()
+        if self.gain_input.text(): 
+            self.display_thread.camera.gain = int(self.gain_input.text())
+            self.display_thread.camera.set_gain()
+        else: 
+            if self.verbose: 
+                print('no input')
         
 
     def ClickAutoExposureOn(self):
@@ -97,8 +105,8 @@ class DisplayAdvanced_base(DisplaySave_base):
             self.auto_exposure_button.clicked.connect(self.ClickAutoExposureOn)
 
 class DisplayAdvanced(DisplayAdvanced_base):
-    def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread,  w, h, "Zwo camera display")
+    def __init__(self, VideoThread, w, h, verbose):
+        super().__init__(VideoThread,  w, h, "Zwo camera display", verbose)
     def closeEvent(self, event):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()

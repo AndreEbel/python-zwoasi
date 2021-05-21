@@ -16,8 +16,8 @@ from time import time_ns, sleep
 import os
 
 class DisplaySave_base(Display_base):
-    def __init__(self, VideoThread, w, h, title):
-        super().__init__(VideoThread,  w, h, title)
+    def __init__(self, VideoThread, w, h, title, verbose):
+        super().__init__(VideoThread,  w, h, title, verbose)
         
         
         #self.tabs.adjustSize()
@@ -82,9 +82,11 @@ class DisplaySave_base(Display_base):
         """
         """
         name = self.dir + self.filename + f'_{time_ns()}.png'
-        print(f'saving {name}')
+        if self.verbose: 
+            print(f'saving {name}')
         cv2.imwrite(name, cv_img)
-        print('image saved')
+        if self.verbose:     
+            print('image saved')
         self.display_thread.save = False  
         if not self.display_thread.record:
             self.textLabel2.setText('Ready to save frame')  
@@ -109,14 +111,24 @@ class DisplaySave_base(Display_base):
         self.textLabel3.setText('No video')
         
     def ClickSetName(self):
-        self.filename = self.filename_input.text()
-        self.textLabel2.setText('Ready to save frame')
-        print(self.filename)
+        if self.filename_input.text(): 
+            self.filename = self.filename_input.text()
+            self.textLabel2.setText('Ready to save frame')
+            if self.verbose: 
+                print(self.filename)
+        else: 
+            if self.verbose: 
+                print('no input')
         
     def ClickSetPeriod(self):
-        self.period = int(self.period_input.text())
-        self.textLabel3.setText('Ready to record multiple frames')
-        print(self.period)
+        if self.period_input.text(): 
+            self.period = int(self.period_input.text())
+            self.textLabel3.setText('Ready to record multiple frames')
+            if self.verbose: 
+                print(self.period)
+        else: 
+            if self.verbose: 
+                print('no input')
         
     def ClickSaveFrame(self):         
         print('saved pressed')
@@ -179,8 +191,8 @@ class DisplaySave_base(Display_base):
         self.record_button.clicked.connect(self.ClickStartRecording)
         
 class DisplaySave(DisplaySave_base):
-    def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread,  w, h, "Zwo camera display")
+    def __init__(self, VideoThread, w, h, verbose = False):
+        super().__init__(VideoThread,  w, h, "Zwo camera display", verbose)
     def closeEvent(self, event):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()

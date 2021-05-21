@@ -15,11 +15,12 @@ import numpy as np
 
 class Display_base(QWidget):
     closed = False
-    def __init__(self, VideoThread, w, h, title):
+    def __init__(self, VideoThread, w, h, title, verbose):
         super().__init__()
         self.display_thread = VideoThread
         self.setWindowTitle(title)
         
+        self.verbose = verbose
         # 1st row: Display
         self.display_width = w
         self.display_height = h
@@ -50,6 +51,7 @@ class Display_base(QWidget):
         # first tab
         self.tab = QWidget()
         self.tab.layout = QVBoxLayout()
+        self.tabs.addTab(self.tab, "Image size")
         
         #width, height, and bins 
         self.widthlabel = QLabel('Width')
@@ -95,7 +97,7 @@ class Display_base(QWidget):
         self.tab.layout.addLayout(hbox_size)
         self.tab.setLayout(self.tab.layout)
         
-        self.tabs.addTab(self.tab, "Image size")
+        #self.tabs.addTab(self.tab, "Image size")
         
         #self.settings_box.addStretch()
         # create a vertical box layout
@@ -185,25 +187,29 @@ class Display_base(QWidget):
             print('camera has been closed')
             
     def ClickSetImageSize(self):
-        w = int(self.width_input.text())
-        h = int(self.height_input.text())
-        b = int(self.bins_input.text())
-        #print("stop the camera")
-        self.display_thread.stop()
-        self.display_thread.camera.set_roi(width=w, 
-                                           height=h,
-                                           bins=b)
-        #print("restart the camera")
-        self.display_thread.camera.ready= True
-        self.display_thread.start()
-        self.width_input.setText(str(self.display_thread.camera.width))
-        self.height_input.setText(str(self.display_thread.camera.height))
-        self.bins_input.setText(str(self.display_thread.camera.bins))
+        if (self.width_input.text())&(self.height_input.text())&(self.bins_input.text()):
+            w = int(self.width_input.text())
+            h = int(self.height_input.text())
+            b = int(self.bins_input.text())
+            #print("stop the camera")
+            self.display_thread.stop()
+            self.display_thread.camera.set_roi(width=w, 
+                                               height=h,
+                                               bins=b)
+            #print("restart the camera")
+            self.display_thread.camera.ready= True
+            self.display_thread.start()
+            self.width_input.setText(str(self.display_thread.camera.width))
+            self.height_input.setText(str(self.display_thread.camera.height))
+            self.bins_input.setText(str(self.display_thread.camera.bins))
+        else: 
+            if self.verbose: 
+                print('all inputs are not filled')
         
 class Display(Display_base):
     
-    def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread, w, h, "Zwo camera display")
+    def __init__(self, VideoThread, w, h, verbose):
+        super().__init__(VideoThread, w, h, "Zwo camera display", verbose)
     def closeEvent(self, event):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()

@@ -10,7 +10,7 @@ class VideoThread(QThread):
     display_frame = pyqtSignal(np.ndarray)
     save_frame = pyqtSignal(np.ndarray)
     
-    def __init__(self, camera):
+    def __init__(self, camera, verbose = False):
         super().__init__()
         self.camera = camera
 
@@ -42,6 +42,7 @@ class VideoThread(QThread):
                     t_save = t_i
                 self.save = False
             sleep(self.camera.exposure*1e-6)
+            
         self.camera.stop_video_capture()
         
     def stop(self):
