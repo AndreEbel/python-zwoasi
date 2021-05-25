@@ -20,7 +20,8 @@ class DisplaySave_base(Display_base):
     def __init__(self, VideoThread, w, h, title, verbose):
         super().__init__(VideoThread,  w, h, title, verbose)
         
-        
+        self.save_status = QLabel('No frame')
+        self.info_box.addWidget(self.save_status)
         #self.tabs.adjustSize()
         # Add tabs
         self.tab1 = QWidget()
@@ -115,6 +116,7 @@ class DisplaySave_base(Display_base):
         super().ClickStartVideo()
        
         # update labels
+        self.save_status.setText('No save parameters')
         self.textLabel2.setText('Filename required')
         self.textLabel3.setText('Period (s) required')
         self.display_thread.save_frame.connect(self.save_image)
@@ -126,12 +128,14 @@ class DisplaySave_base(Display_base):
         self.display_thread.save_frame.disconnect()
         
         # update labels
+        self.save_status.setText('No frame')
         self.textLabel2.setText('No video')
         self.textLabel3.setText('No video')
         
     def ClickSetName(self):
         if self.filename_input.text(): 
             self.filename = self.filename_input.text()
+            self.save_status.setText('Ready to record')
             self.textLabel2.setText('Ready to save frame')
             if self.verbose: 
                 print(self.filename)
@@ -142,6 +146,7 @@ class DisplaySave_base(Display_base):
     def ClickSetPeriod(self):
         if self.period_input.text(): 
             self.period = int(self.period_input.text())
+            self.save_status.setText('Ready to record continuously')
             self.textLabel3.setText('Ready to record multiple frames')
             if self.verbose: 
                 print(self.period)
@@ -155,6 +160,7 @@ class DisplaySave_base(Display_base):
             if self.filename: 
                 #self.saving = True
                 # update labels
+                self.save_status.setText('Saving frame')
                 self.textLabel2.setText('Saving frame')
                 self.dir = os.getcwd()+'\\'
                 self.display_thread.save = True    
@@ -165,12 +171,13 @@ class DisplaySave_base(Display_base):
             self.textLabel2.setText('No video')
             
     def ClickStartRecording(self): 
-        
-        print('recording pressed')
+        if self.verbose: 
+            print('recording pressed')
         if self.display_thread.camera.ready:
             if self.filename: 
                 if self.period:
-                    print('recording ok')
+                    if self.verbose: 
+                        print('recording ok')
                     self.record_button.clicked.disconnect(self.ClickStartRecording)
                     self.display_thread.record_period = self.period
                     
@@ -180,30 +187,49 @@ class DisplaySave_base(Display_base):
                         os.mkdir(self.dir)
                     except: 
                         pass 
-                    print('folder ok')
+                    if self.verbose: 
+                        print('folder ok')
                     self.display_thread.record = True
                     # update labels
-                    self.textLabel1.setText('Saving frames')
+                    #self.textLabel1.setText('Saving frames')
+                    self.save_status.setText('Saving frames')
                     self.textLabel3.setText('Saving frames')
                     # Change button to stop
                     self.record_button.setText('Stop recording')
                     # Stop the video if button clicked
                     self.record_button.clicked.connect(self.ClickStopRecording)
                 else: 
+                    self.save_status.setText('No valid period')
                     self.textLabel3.setText('No valid period')
             else: 
+                self.save_status.setText('No valid filename')
                 self.textLabel3.setText('No valid filename') 
         else: 
+            self.save_status.setText('No video')
             self.textLabel3.setText('No video')
         
     def ClickStopRecording(self): 
         self.record_button.clicked.disconnect(self.ClickStopRecording)
         self.display_thread.save = False
         self.display_thread.record = False
-        self.textLabel1.setText('Video running')
+        self.video_status.setText('Video running')
+        self.save_status.setText('Recording stopped')
         self.textLabel3.setText('Recording thread stopped')
         sleep(0.1)
-        self.textLabel3.setText('Ready to record')
+        if self.display_thread.camera.ready:
+            if self.filename: 
+                if self.period:
+                    self.save_status.setText('Ready to record')
+                    self.textLabel3.setText('Ready to record')
+                else: 
+                    self.save_status.setText('No valid period')
+                    self.textLabel3.setText('No valid period')
+            else: 
+                self.save_status.setText('No valid filename')
+                self.textLabel3.setText('No valid filename') 
+        else: 
+            self.save_status.setText('No video')
+            self.textLabel3.setText('No video')
         # Change button to start
         self.record_button.setText('Start recording')
         # Start the video if button clicked
