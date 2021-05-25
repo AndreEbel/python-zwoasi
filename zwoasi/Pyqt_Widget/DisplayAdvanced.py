@@ -1,5 +1,5 @@
 from .DisplaySave import DisplaySave_base
-from PyQt5.QtWidgets import QLineEdit,QHBoxLayout, QPushButton, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QLineEdit,QHBoxLayout, QPushButton, QWidget, QVBoxLayout, QLabel
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtCore import Qt
 # from time import sleep
@@ -7,6 +7,9 @@ from PyQt5.QtCore import Qt
 class DisplayAdvanced_base(DisplaySave_base):
     def __init__(self, VideoThread, w, h, title, verbose):
         super().__init__(VideoThread,  w, h, title, verbose)
+        
+        self.exposure_status =  QLabel('Autoexposure off')
+        self.info_box.addWidget(self.exposure_status)
         
         # Add tabs
         self.tab2 = QWidget()
@@ -82,7 +85,7 @@ class DisplayAdvanced_base(DisplaySave_base):
             self.auto_exposure_button.clicked.disconnect(self.ClickAutoExposureOn)
             self.display_thread.auto_exp = True
             self.display_thread.camera.auto_exposure(on = True)
-            
+            self.exposure_status.setText('AutoExposure On')
             self.auto_exposure_button.setText('Set AutoExposure Off')
             self.auto_exposure_button.clicked.connect(self.ClickAutoExposureOff)
         
@@ -98,7 +101,7 @@ class DisplayAdvanced_base(DisplaySave_base):
             self.gain_input.setText(str(self.display_thread.camera.gain))
             self.exposure_input.setText(str(self.display_thread.camera.exposure))
             self.display_thread.auto_exp = False
-         
+            self.exposure_status.setText('AutoExposure Off')
             self.auto_exposure_button.setText('Set AutoExposure On')
             self.auto_exposure_button.clicked.connect(self.ClickAutoExposureOn)
 
