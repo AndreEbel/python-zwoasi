@@ -9,7 +9,8 @@ from .Display import Display_base
 
 from PyQt5.QtWidgets import QLineEdit, QWidget,QLabel,QHBoxLayout,QVBoxLayout, QPushButton
 from PyQt5.QtGui import QIntValidator
-import cv2
+#import cv2
+import tifffile
 from PyQt5.QtCore import pyqtSlot, Qt
 import numpy as np
 from time import time_ns, sleep
@@ -78,19 +79,37 @@ class DisplaySave_base(Display_base):
         self.recording = False
    
     @pyqtSlot(np.ndarray)
-    def save_image(self, cv_img):
+    def save_image(self, img, extra_metadata =None):
         """
+        save image as a tiff file with metadata
+
+        Parameters
+        ----------
+        img : 2D numpy array
+            image data 
+        extra_metadata : dict, optional
+            dictionnary where the extra metadata to be stored in the tiff file is passed. 
+            The default is None.
+
+        Returns
+        -------
+        None.
+
         """
         name = self.dir + self.filename + f'_{time_ns()}.png'
+        metadata = {'time': str(time_ns())}
+        if extra_metadata != None: 
+            metadata.update(extra_metadata)
         if self.verbose: 
             print(f'saving {name}')
-        cv2.imwrite(name, cv_img)
+        tifffile.imwrite(name, img, metadata= metadata)
+        #cv2.imwrite(name, img)
         if self.verbose:     
             print('image saved')
         self.display_thread.save = False  
         if not self.display_thread.record:
             self.textLabel2.setText('Ready to save frame')  
-    
+            
     # Activates when Start/Stop video button is clicked to Start (ss_video
     def ClickStartVideo(self):
         super().ClickStartVideo()
