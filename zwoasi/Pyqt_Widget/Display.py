@@ -37,12 +37,11 @@ class Display_base(QWidget):
         self.settings_box =  QVBoxLayout()
         
         self.info_box = QHBoxLayout()
-        self.info_box.addStretch(1)
-        self.textLabel1 = QLabel('Ready to start')
-        self.ss_video = QPushButton('Start video',self)
-        self.ss_video.clicked.connect(self.ClickStartVideo)
-        self.info_box.addWidget(self.textLabel1)
-        self.info_box.addWidget(self.ss_video)
+        #self.info_box.addStretch(1)
+        self.video_status = QLabel('Ready to start')
+
+        #self.info_box.addWidget(self.ss_video)
+        self.info_box.addWidget(self.video_status)
         self.settings_box.addLayout(self.info_box)
         
         # Initialize tab screen
@@ -54,6 +53,8 @@ class Display_base(QWidget):
         self.tab.layout = QVBoxLayout()
         self.tabs.addTab(self.tab, "Image size")
         
+        self.ss_video = QPushButton('Start video',self)
+        self.ss_video.clicked.connect(self.ClickStartVideo)
         #width, height, and bins 
         self.widthlabel = QLabel('Width')
         self.width_input = QLineEdit()
@@ -90,8 +91,10 @@ class Display_base(QWidget):
         
         self.size_button = QPushButton('Set image size',self)
         self.size_button.clicked.connect(self.ClickSetImageSize)
+        
         hbox_size= QHBoxLayout()
-        hbox_size.addStretch(1)
+        hbox_size.addStretch(1)         
+        hbox_size.addWidget(self.ss_video)
         hbox_size.addLayout(vbox_width)
         hbox_size.addLayout(vbox_height)
         hbox_size.addLayout(vbox_bins)
@@ -159,7 +162,7 @@ class Display_base(QWidget):
         self.ss_video.clicked.disconnect(self.ClickStartVideo)
         
         # update labels
-        self.textLabel1.setText('Video running')
+        self.video_status.setText('Video running')
 
         # Change button to stop
         self.ss_video.setText('Stop video')
@@ -178,7 +181,7 @@ class Display_base(QWidget):
         # start the thread
         self.display_thread.stop()
         self.ss_video.setText('Start video')
-        self.textLabel1.setText('Ready to start')
+        self.video_status.setText('Ready to start')
         # Start the video if button clicked
         self.ss_video.clicked.connect(self.ClickStartVideo)
     
