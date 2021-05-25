@@ -44,8 +44,9 @@ class DisplayAdvanced_base(DisplaySave_base):
         hbox_gain.addWidget(self.gain_button)
         
         # initialization of the gain and exposure input with the current values 
-        self.gain_input.setText(str(self.display_thread.camera.gain))
-        self.exposure_input.setText(str(self.display_thread.camera.exposure))
+        if self.display_thread.camera.id != None: # 0 is ok for cam id
+            self.gain_input.setText(str(self.display_thread.camera.gain))
+            self.exposure_input.setText(str(self.display_thread.camera.exposure))
         # Add the new function to the layout     
         # Add the new function to the layout  
         
@@ -60,7 +61,6 @@ class DisplayAdvanced_base(DisplaySave_base):
         self.setLayout(self.vbox)
             
    
-        
     def ClickSetExposure(self):
         if self.exposure_input.text(): 
             self.display_thread.camera.exposure = int(self.exposure_input.text())
@@ -69,7 +69,6 @@ class DisplayAdvanced_base(DisplaySave_base):
             if self.verbose: 
                 print('no input')
             
-    
     def ClickSetGain(self):
         if self.gain_input.text(): 
             self.display_thread.camera.gain = int(self.gain_input.text())
@@ -78,7 +77,6 @@ class DisplayAdvanced_base(DisplaySave_base):
             if self.verbose: 
                 print('no input')
         
-
     def ClickAutoExposureOn(self):
         if not self.display_thread.camera.closed: 
             self.auto_exposure_button.clicked.disconnect(self.ClickAutoExposureOn)
