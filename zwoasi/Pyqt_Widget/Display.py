@@ -21,6 +21,9 @@ class Display_base(QWidget):
         self.setWindowTitle(title)
         
         self.verbose = verbose
+        
+         # create a vertical box layout
+        self.vbox = QVBoxLayout()
         # 1st row: Display
         self.display_width = w
         self.display_height = h
@@ -29,9 +32,8 @@ class Display_base(QWidget):
         self.image_label.adjustSize()
         self.image_label.setAlignment(Qt.AlignCenter)
         
-        self.display_box =  QVBoxLayout()
-        self.display_box.addWidget(self.image_label)
-        #self.display_box.addStretch(1)
+        self.vbox.addWidget(self.image_label) 
+        
         
         # 2nd row: settings / info bar 
         self.settings_box =  QVBoxLayout()
@@ -39,14 +41,12 @@ class Display_base(QWidget):
         self.info_box = QHBoxLayout()
         #self.info_box.addStretch(1)
         self.video_status = QLabel('Ready to start')
-
-        #self.info_box.addWidget(self.ss_video)
         self.info_box.addWidget(self.video_status)
         self.settings_box.addLayout(self.info_box)
         
         # Initialize tab screen
         self.tabs = QTabWidget()
-        self.tabs.setMaximumHeight(200)
+        self.tabs.setMaximumHeight(150)
         self.settings_box.addWidget(self.tabs)
         # first tab
         self.tab = QWidget()
@@ -93,7 +93,7 @@ class Display_base(QWidget):
         self.size_button.clicked.connect(self.ClickSetImageSize)
         
         hbox_size= QHBoxLayout()
-        hbox_size.addStretch(1)         
+        #hbox_size.addStretch(1)         
         hbox_size.addWidget(self.ss_video)
         hbox_size.addLayout(vbox_width)
         hbox_size.addLayout(vbox_height)
@@ -102,14 +102,6 @@ class Display_base(QWidget):
         self.tab.layout.addLayout(hbox_size)
         self.tab.setLayout(self.tab.layout)
         
-        #self.tabs.addTab(self.tab, "Image size")
-        
-        #self.settings_box.addStretch()
-        # create a vertical box layout
-        self.vbox = QVBoxLayout()
-       
-        self.vbox.addLayout(self.display_box)
-        #self.vbox.addStretch(1)
         self.vbox.addLayout(self.settings_box)
 
         # set the vbox layout as the widgets layout
@@ -117,12 +109,10 @@ class Display_base(QWidget):
         
         # initialize the camera
         self.display_thread.camera.set_camera()
-        # start the thread
-        #self.display_thread.start()
-    
+   
 
         # create a grey pixmap
-        self.pixmap = QPixmap(100, 100)
+        self.pixmap = QPixmap(self.display_width, self.display_height)
         self.pixmap.fill(QColor('darkGray'))
         # set the image image to the grey pixmap
         self.image_label.setPixmap(self.pixmap.scaled(
