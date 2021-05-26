@@ -17,6 +17,7 @@ from time import time_ns, sleep
 import os
 
 class DisplaySave_base(Display_base):
+    metadata = {}
     def __init__(self, VideoThread, w, h, title, verbose):
         super().__init__(VideoThread,  w, h, title, verbose)
         
@@ -40,7 +41,7 @@ class DisplaySave_base(Display_base):
         self.save_button.clicked.connect(self.ClickSaveFrame)
         
         hbox2 = QHBoxLayout()
-        hbox2.addStretch(1)
+        #hbox2.addStretch(1)
         hbox2.addWidget(self.filename_input)
         hbox2.addWidget(self.name_button)
         hbox2.addWidget(self.textLabel2)
@@ -59,7 +60,7 @@ class DisplaySave_base(Display_base):
         self.record_button.clicked.connect(self.ClickStartRecording)
               
         hbox3 = QHBoxLayout()
-        hbox3.addStretch(1)
+        #hbox3.addStretch(1)
         hbox3.addWidget(self.period_input)
         hbox3.addWidget(self.period_button)
         hbox3.addWidget(self.textLabel3)
@@ -71,7 +72,7 @@ class DisplaySave_base(Display_base):
         self.tab1.layout.addLayout(hbox3)
         self.tab1.setLayout(self.tab1.layout)
         
-        self.settings_box.addWidget(self.tabs)
+        #self.settings_box.addWidget(self.tabs)
         # refresh the widget layout
         self.setLayout(self.vbox)
         
@@ -80,7 +81,7 @@ class DisplaySave_base(Display_base):
         self.recording = False
    
     @pyqtSlot(np.ndarray)
-    def save_image(self, img, extra_metadata =None):
+    def save_image(self, img):
         """
         save image as a tiff file with metadata
 
@@ -99,8 +100,8 @@ class DisplaySave_base(Display_base):
         """
         name = self.dir + self.filename + f'_{time_ns()}.png'
         metadata = {'time': str(time_ns())}
-        if extra_metadata != None: 
-            metadata.update(extra_metadata)
+        if self.metadata != None: 
+            metadata.update(self.metadata)
         if self.verbose: 
             print(f'saving {name}')
         tifffile.imwrite(name, img, metadata= metadata)
