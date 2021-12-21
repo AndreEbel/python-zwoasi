@@ -14,8 +14,222 @@ import sys
 import time
 import traceback
 
+logger = logging.getLogger(__name__)
+
+# ASI_BAYER_PATTERN
+ASI_BAYER_RG = 0
+ASI_BAYER_BG = 1
+ASI_BAYER_GR = 2
+ASI_BAYER_RB = 3
+
+# ASI_IMGTYPE
+ASI_IMG_RAW8 = 0
+ASI_IMG_RGB24 = 1
+ASI_IMG_RAW16 = 2
+ASI_IMG_Y8 = 3
+ASI_IMG_END = -1
+
+# ASI_GUIDE_DIRECTION
+ASI_GUIDE_NORTH = 0
+ASI_GUIDE_SOUTH = 1
+ASI_GUIDE_EAST = 2
+ASI_GUIDE_WEST = 3
+
+# ASI_CONTROL_TYPE
+ASI_GAIN = 0
+ASI_EXPOSURE = 1
+ASI_GAMMA = 2
+ASI_WB_R = 3
+ASI_WB_B = 4
+ASI_BRIGHTNESS = 5
+ASI_OFFSET = 5
+ASI_BANDWIDTHOVERLOAD = 6
+ASI_OVERCLOCK = 7
+ASI_TEMPERATURE = 8  # return 10*temperature
+ASI_FLIP = 9
+ASI_AUTO_MAX_GAIN = 10
+ASI_AUTO_MAX_EXP = 11
+ASI_AUTO_MAX_BRIGHTNESS = 12
+ASI_HARDWARE_BIN = 13
+ASI_HIGH_SPEED_MODE = 14
+ASI_COOLER_POWER_PERC = 15
+ASI_TARGET_TEMP = 16  # not need *10
+ASI_COOLER_ON = 17
+ASI_MONO_BIN = 18  # lead to less grid at software bin mode for color camera
+ASI_FAN_ON = 19
+ASI_PATTERN_ADJUST = 20
+
+# ASI_CAMERA_MODE
+ASI_MODE_NORMAL = 0 
+ASI_MODE_TRIG_SOFT_EDGE = 1
+ASI_MODE_TRIG_RISE_EDGE = 2
+ASI_MODE_TRIG_FALL_EDGE = 3
+ASI_MODE_TRIG_SOFT_LEVEL = 4
+ASI_MODE_TRIG_HIGH_LEVEL = 5
+ASI_MODE_TRIG_LOW_LEVEL = 6
+ASI_MODE_END = -1
+
+# ASI_TRIG_OUTPUT
+ASI_TRIG_OUTPUT_PINA = 0
+ASI_TRIG_OUTPUT_PINB = 1
+ASI_TRIG_OUTPUT_NONE = -1
 
 
+# ASI_EXPOSURE_STATUS
+ASI_EXP_IDLE = 0
+ASI_EXP_WORKING = 1
+ASI_EXP_SUCCESS = 2
+ASI_EXP_FAILED = 3
+
+
+def init(library_file=None):
+    print('initialization')
+    global zwolib
+
+    if zwolib is not None:
+        return # Library already initialized. do nothing
+
+    if library_file is None:
+        library_file = find_library('ASICamera2')
+
+    if library_file is None:
+        raise ZWO_Error('ASI SDK library not found')
+
+    zwolib = c.cdll.LoadLibrary(library_file)
+
+    zwolib.ASIGetNumOfConnectedCameras.argtypes = []
+    zwolib.ASIGetNumOfConnectedCameras.restype = c.c_int
+
+    zwolib.ASIGetCameraProperty.argtypes = [c.POINTER(_ASI_CAMERA_INFO), c.c_int]
+    zwolib.ASIGetCameraProperty.restype = c.c_int
+
+    zwolib.ASIOpenCamera.argtypes = [c.c_int]
+    zwolib.ASIOpenCamera.restype = c.c_int
+
+    zwolib.ASIInitCamera.argtypes = [c.c_int]
+    zwolib.ASIInitCamera.restype = c.c_int
+
+    zwolib.ASICloseCamera.argtypes = [c.c_int]
+    zwolib.ASICloseCamera.restype = c.c_int
+
+    zwolib.ASIGetNumOfControls.argtypes = [c.c_int, c.POINTER(c.c_int)]
+    zwolib.ASIGetNumOfControls.restype = c.c_int
+
+    zwolib.ASIGetControlCaps.argtypes = [c.c_int, c.c_int,
+                                         c.POINTER(_ASI_CONTROL_CAPS)]
+    zwolib.ASIGetControlCaps.restype = c.c_int
+
+    zwolib.ASIGetControlValue.argtypes = [c.c_int,
+                                          c.c_int,
+                                          c.POINTER(c.c_long),
+                                          c.POINTER(c.c_int)]
+    zwolib.ASIGetControlValue.restype = c.c_int
+
+    zwolib.ASISetControlValue.argtypes = [c.c_int, c.c_int, c.c_long, c.c_int]
+    zwolib.ASISetControlValue.restype = c.c_int
+
+    zwolib.ASIGetROIFormat.argtypes = [c.c_int,
+                                       c.POINTER(c.c_int),
+                                       c.POINTER(c.c_int),
+                                       c.POINTER(c.c_int),
+                                       c.POINTER(c.c_int)]
+    zwolib.ASIGetROIFormat.restype = c.c_int
+
+    zwolib.ASISetROIFormat.argtypes = [c.c_int, c.c_int, c.c_int, c.c_int, c.c_int]
+    zwolib.ASISetROIFormat.restype = c.c_int
+
+    zwolib.ASIGetStartPos.argtypes = [c.c_int,
+                                      c.POINTER(c.c_int),
+                                      c.POINTER(c.c_int)]
+    zwolib.ASIGetStartPos.restype = c.c_int
+
+    zwolib.ASISetStartPos.argtypes = [c.c_int, c.c_int, c.c_int]
+    zwolib.ASISetStartPos.restype = c.c_int
+
+    zwolib.ASIGetDroppedFrames.argtypes = [c.c_int, c.POINTER(c.c_int)]
+    zwolib.ASIGetDroppedFrames.restype = c.c_int
+
+    zwolib.ASIEnableDarkSubtract.argtypes = [c.c_int, c.POINTER(c.c_char)]
+    zwolib.ASIEnableDarkSubtract.restype = c.c_int
+
+    zwolib.ASIDisableDarkSubtract.argtypes = [c.c_int]
+    zwolib.ASIDisableDarkSubtract.restype = c.c_int
+
+    zwolib.ASIStartVideoCapture.argtypes = [c.c_int]
+    zwolib.ASIStartVideoCapture.restype = c.c_int
+
+    zwolib.ASIStopVideoCapture.argtypes = [c.c_int]
+    zwolib.ASIStopVideoCapture.restype = c.c_int
+
+    zwolib.ASIGetVideoData.argtypes = [c.c_int,
+                                       c.POINTER(c.c_char),
+                                       c.c_long,
+                                       c.c_int]
+    zwolib.ASIGetVideoData.restype = c.c_int
+
+    zwolib.ASIPulseGuideOn.argtypes = [c.c_int, c.c_int]
+    zwolib.ASIPulseGuideOn.restype = c.c_int
+
+    zwolib.ASIPulseGuideOff.argtypes = [c.c_int, c.c_int]
+    zwolib.ASIPulseGuideOff.restype = c.c_int
+
+    zwolib.ASIStartExposure.argtypes = [c.c_int, c.c_int]
+    zwolib.ASIStartExposure.restype = c.c_int
+
+    zwolib.ASIStopExposure.argtypes = [c.c_int]
+    zwolib.ASIStopExposure.restype = c.c_int
+
+    zwolib.ASIGetExpStatus.argtypes = [c.c_int, c.POINTER(c.c_int)]
+    zwolib.ASIGetExpStatus.restype = c.c_int
+
+    zwolib.ASIGetDataAfterExp.argtypes = [c.c_int, c.POINTER(c.c_char), c.c_long]
+    zwolib.ASIGetDataAfterExp.restype = c.c_int
+
+    zwolib.ASIGetID.argtypes = [c.c_int, c.POINTER(_ASI_ID)]
+    zwolib.ASIGetID.restype = c.c_int
+
+    # Include file suggests:
+    # zwolib.ASISetID.argtypes = [c.c_int, _ASI_ID]
+    #
+    # Suspect it should really be
+    # zwolib.ASISetID.argtypes = [c.c_int, c.POINTER(_ASI_ID)]
+    #
+    # zwolib.ASISetID.restype = c.c_int
+    #
+    # Leave out support for ASISetID for now
+
+    zwolib.ASIGetGainOffset.argtypes = [c.c_int,
+                                        c.POINTER(c.c_int),
+                                        c.POINTER(c.c_int),
+                                        c.POINTER(c.c_int),
+                                        c.POINTER(c.c_int)]
+    zwolib.ASIGetGainOffset.restype = c.c_int
+
+    zwolib.ASISetCameraMode.argtypes = [c.c_int, c.c_int]
+    zwolib.ASISetCameraMode.restype = c.c_int
+
+    zwolib.ASIGetCameraMode.argtypes = [c.c_int, c.POINTER(c.c_int)]
+    zwolib.ASIGetCameraMode.restype = c.c_int
+
+    zwolib.ASIGetCameraSupportMode.argtypes = [c.c_int, c.POINTER(_ASI_SUPPORTED_MODE)]
+    zwolib.ASIGetCameraSupportMode.restype = c.c_int
+
+    zwolib.ASISendSoftTrigger.argtypes = [c.c_int, c.c_int]
+    zwolib.ASISendSoftTrigger.restype = c.c_int
+
+    zwolib.ASISetTriggerOutputIOConf.argtypes = [c.c_int,
+                                                 c.c_int,
+                                                 c.c_int,
+                                                 c.c_long,
+                                                 c.c_long]
+    zwolib.ASISetTriggerOutputIOConf.restype = c.c_int
+
+    zwolib.ASIGetTriggerOutputIOConf.argtypes = [c.c_int,
+                                                 c.c_int,
+                                                 c.POINTER(c.c_int),
+                                                 c.POINTER(c.c_long),
+                                                 c.POINTER(c.c_long)]
+    zwolib.ASIGetTriggerOutputIOConf.restype = c.c_int
 def get_num_cameras():
     """
     Retrieves the number of ZWO ASI cameras that are connected. 
@@ -51,7 +265,26 @@ class ZWO_IOError(ZWO_Error):
     def __init__(self, message, error_code=None):
         ZWO_Error.__init__(self, message)
         self.error_code = error_code
-
+# Mapping of error numbers to exceptions. Zero is used for success.
+zwo_errors = [None,
+              ZWO_IOError('Invalid index', 1),
+              ZWO_IOError('Invalid ID', 2),
+              ZWO_IOError('Invalid control type', 3),
+              ZWO_IOError('Camera closed', 4),
+              ZWO_IOError('Camera removed', 5),
+              ZWO_IOError('Invalid path', 6),
+              ZWO_IOError('Invalid file format', 7),
+              ZWO_IOError('Invalid size', 8),
+              ZWO_IOError('Invalid image type', 9),
+              ZWO_IOError('Outside of boundary', 10),
+              ZWO_IOError('Timeout', 11),
+              ZWO_IOError('Invalid sequence', 12),
+              ZWO_IOError('Buffer too small', 13),
+              ZWO_IOError('Video mode active', 14),
+              ZWO_IOError('Exposure in progress', 15),
+              ZWO_IOError('General error', 16),
+              ZWO_IOError('Invalid mode', 17)
+              ]
 
 class ZWO_CaptureError(ZWO_Error):
     """
@@ -930,248 +1163,5 @@ class _ASI_SUPPORTED_MODE(c.Structure):
         base_dict = {k: getattr(self, k) for k, _ in self._fields_}
         base_dict['SupportedCameraMode'] = [int(x) for x in base_dict['SupportedCameraMode']]
         return base_dict
-
-
-def init(library_file=None):
-    print('initialization')
-    global zwolib
-
-    if zwolib is not None:
-        return # Library already initialized. do nothing
-
-    if library_file is None:
-        library_file = find_library('ASICamera2')
-
-    if library_file is None:
-        raise ZWO_Error('ASI SDK library not found')
-
-    zwolib = c.cdll.LoadLibrary(library_file)
-
-    zwolib.ASIGetNumOfConnectedCameras.argtypes = []
-    zwolib.ASIGetNumOfConnectedCameras.restype = c.c_int
-
-    zwolib.ASIGetCameraProperty.argtypes = [c.POINTER(_ASI_CAMERA_INFO), c.c_int]
-    zwolib.ASIGetCameraProperty.restype = c.c_int
-
-    zwolib.ASIOpenCamera.argtypes = [c.c_int]
-    zwolib.ASIOpenCamera.restype = c.c_int
-
-    zwolib.ASIInitCamera.argtypes = [c.c_int]
-    zwolib.ASIInitCamera.restype = c.c_int
-
-    zwolib.ASICloseCamera.argtypes = [c.c_int]
-    zwolib.ASICloseCamera.restype = c.c_int
-
-    zwolib.ASIGetNumOfControls.argtypes = [c.c_int, c.POINTER(c.c_int)]
-    zwolib.ASIGetNumOfControls.restype = c.c_int
-
-    zwolib.ASIGetControlCaps.argtypes = [c.c_int, c.c_int,
-                                         c.POINTER(_ASI_CONTROL_CAPS)]
-    zwolib.ASIGetControlCaps.restype = c.c_int
-
-    zwolib.ASIGetControlValue.argtypes = [c.c_int,
-                                          c.c_int,
-                                          c.POINTER(c.c_long),
-                                          c.POINTER(c.c_int)]
-    zwolib.ASIGetControlValue.restype = c.c_int
-
-    zwolib.ASISetControlValue.argtypes = [c.c_int, c.c_int, c.c_long, c.c_int]
-    zwolib.ASISetControlValue.restype = c.c_int
-
-    zwolib.ASIGetROIFormat.argtypes = [c.c_int,
-                                       c.POINTER(c.c_int),
-                                       c.POINTER(c.c_int),
-                                       c.POINTER(c.c_int),
-                                       c.POINTER(c.c_int)]
-    zwolib.ASIGetROIFormat.restype = c.c_int
-
-    zwolib.ASISetROIFormat.argtypes = [c.c_int, c.c_int, c.c_int, c.c_int, c.c_int]
-    zwolib.ASISetROIFormat.restype = c.c_int
-
-    zwolib.ASIGetStartPos.argtypes = [c.c_int,
-                                      c.POINTER(c.c_int),
-                                      c.POINTER(c.c_int)]
-    zwolib.ASIGetStartPos.restype = c.c_int
-
-    zwolib.ASISetStartPos.argtypes = [c.c_int, c.c_int, c.c_int]
-    zwolib.ASISetStartPos.restype = c.c_int
-
-    zwolib.ASIGetDroppedFrames.argtypes = [c.c_int, c.POINTER(c.c_int)]
-    zwolib.ASIGetDroppedFrames.restype = c.c_int
-
-    zwolib.ASIEnableDarkSubtract.argtypes = [c.c_int, c.POINTER(c.c_char)]
-    zwolib.ASIEnableDarkSubtract.restype = c.c_int
-
-    zwolib.ASIDisableDarkSubtract.argtypes = [c.c_int]
-    zwolib.ASIDisableDarkSubtract.restype = c.c_int
-
-    zwolib.ASIStartVideoCapture.argtypes = [c.c_int]
-    zwolib.ASIStartVideoCapture.restype = c.c_int
-
-    zwolib.ASIStopVideoCapture.argtypes = [c.c_int]
-    zwolib.ASIStopVideoCapture.restype = c.c_int
-
-    zwolib.ASIGetVideoData.argtypes = [c.c_int,
-                                       c.POINTER(c.c_char),
-                                       c.c_long,
-                                       c.c_int]
-    zwolib.ASIGetVideoData.restype = c.c_int
-
-    zwolib.ASIPulseGuideOn.argtypes = [c.c_int, c.c_int]
-    zwolib.ASIPulseGuideOn.restype = c.c_int
-
-    zwolib.ASIPulseGuideOff.argtypes = [c.c_int, c.c_int]
-    zwolib.ASIPulseGuideOff.restype = c.c_int
-
-    zwolib.ASIStartExposure.argtypes = [c.c_int, c.c_int]
-    zwolib.ASIStartExposure.restype = c.c_int
-
-    zwolib.ASIStopExposure.argtypes = [c.c_int]
-    zwolib.ASIStopExposure.restype = c.c_int
-
-    zwolib.ASIGetExpStatus.argtypes = [c.c_int, c.POINTER(c.c_int)]
-    zwolib.ASIGetExpStatus.restype = c.c_int
-
-    zwolib.ASIGetDataAfterExp.argtypes = [c.c_int, c.POINTER(c.c_char), c.c_long]
-    zwolib.ASIGetDataAfterExp.restype = c.c_int
-
-    zwolib.ASIGetID.argtypes = [c.c_int, c.POINTER(_ASI_ID)]
-    zwolib.ASIGetID.restype = c.c_int
-
-    # Include file suggests:
-    # zwolib.ASISetID.argtypes = [c.c_int, _ASI_ID]
-    #
-    # Suspect it should really be
-    # zwolib.ASISetID.argtypes = [c.c_int, c.POINTER(_ASI_ID)]
-    #
-    # zwolib.ASISetID.restype = c.c_int
-    #
-    # Leave out support for ASISetID for now
-
-    zwolib.ASIGetGainOffset.argtypes = [c.c_int,
-                                        c.POINTER(c.c_int),
-                                        c.POINTER(c.c_int),
-                                        c.POINTER(c.c_int),
-                                        c.POINTER(c.c_int)]
-    zwolib.ASIGetGainOffset.restype = c.c_int
-
-    zwolib.ASISetCameraMode.argtypes = [c.c_int, c.c_int]
-    zwolib.ASISetCameraMode.restype = c.c_int
-
-    zwolib.ASIGetCameraMode.argtypes = [c.c_int, c.POINTER(c.c_int)]
-    zwolib.ASIGetCameraMode.restype = c.c_int
-
-    zwolib.ASIGetCameraSupportMode.argtypes = [c.c_int, c.POINTER(_ASI_SUPPORTED_MODE)]
-    zwolib.ASIGetCameraSupportMode.restype = c.c_int
-
-    zwolib.ASISendSoftTrigger.argtypes = [c.c_int, c.c_int]
-    zwolib.ASISendSoftTrigger.restype = c.c_int
-
-    zwolib.ASISetTriggerOutputIOConf.argtypes = [c.c_int,
-                                                 c.c_int,
-                                                 c.c_int,
-                                                 c.c_long,
-                                                 c.c_long]
-    zwolib.ASISetTriggerOutputIOConf.restype = c.c_int
-
-    zwolib.ASIGetTriggerOutputIOConf.argtypes = [c.c_int,
-                                                 c.c_int,
-                                                 c.POINTER(c.c_int),
-                                                 c.POINTER(c.c_long),
-                                                 c.POINTER(c.c_long)]
-    zwolib.ASIGetTriggerOutputIOConf.restype = c.c_int
-
-
-
-
-logger = logging.getLogger(__name__)
-
-# ASI_BAYER_PATTERN
-ASI_BAYER_RG = 0
-ASI_BAYER_BG = 1
-ASI_BAYER_GR = 2
-ASI_BAYER_RB = 3
-
-# ASI_IMGTYPE
-ASI_IMG_RAW8 = 0
-ASI_IMG_RGB24 = 1
-ASI_IMG_RAW16 = 2
-ASI_IMG_Y8 = 3
-ASI_IMG_END = -1
-
-# ASI_GUIDE_DIRECTION
-ASI_GUIDE_NORTH = 0
-ASI_GUIDE_SOUTH = 1
-ASI_GUIDE_EAST = 2
-ASI_GUIDE_WEST = 3
-
-# ASI_CONTROL_TYPE
-ASI_GAIN = 0
-ASI_EXPOSURE = 1
-ASI_GAMMA = 2
-ASI_WB_R = 3
-ASI_WB_B = 4
-ASI_BRIGHTNESS = 5
-ASI_OFFSET = 5
-ASI_BANDWIDTHOVERLOAD = 6
-ASI_OVERCLOCK = 7
-ASI_TEMPERATURE = 8  # return 10*temperature
-ASI_FLIP = 9
-ASI_AUTO_MAX_GAIN = 10
-ASI_AUTO_MAX_EXP = 11
-ASI_AUTO_MAX_BRIGHTNESS = 12
-ASI_HARDWARE_BIN = 13
-ASI_HIGH_SPEED_MODE = 14
-ASI_COOLER_POWER_PERC = 15
-ASI_TARGET_TEMP = 16  # not need *10
-ASI_COOLER_ON = 17
-ASI_MONO_BIN = 18  # lead to less grid at software bin mode for color camera
-ASI_FAN_ON = 19
-ASI_PATTERN_ADJUST = 20
-
-# ASI_CAMERA_MODE
-ASI_MODE_NORMAL = 0 
-ASI_MODE_TRIG_SOFT_EDGE = 1
-ASI_MODE_TRIG_RISE_EDGE = 2
-ASI_MODE_TRIG_FALL_EDGE = 3
-ASI_MODE_TRIG_SOFT_LEVEL = 4
-ASI_MODE_TRIG_HIGH_LEVEL = 5
-ASI_MODE_TRIG_LOW_LEVEL = 6
-ASI_MODE_END = -1
-
-# ASI_TRIG_OUTPUT
-ASI_TRIG_OUTPUT_PINA = 0
-ASI_TRIG_OUTPUT_PINB = 1
-ASI_TRIG_OUTPUT_NONE = -1
-
-
-# ASI_EXPOSURE_STATUS
-ASI_EXP_IDLE = 0
-ASI_EXP_WORKING = 1
-ASI_EXP_SUCCESS = 2
-ASI_EXP_FAILED = 3
-
-
-# Mapping of error numbers to exceptions. Zero is used for success.
-zwo_errors = [None,
-              ZWO_IOError('Invalid index', 1),
-              ZWO_IOError('Invalid ID', 2),
-              ZWO_IOError('Invalid control type', 3),
-              ZWO_IOError('Camera closed', 4),
-              ZWO_IOError('Camera removed', 5),
-              ZWO_IOError('Invalid path', 6),
-              ZWO_IOError('Invalid file format', 7),
-              ZWO_IOError('Invalid size', 8),
-              ZWO_IOError('Invalid image type', 9),
-              ZWO_IOError('Outside of boundary', 10),
-              ZWO_IOError('Timeout', 11),
-              ZWO_IOError('Invalid sequence', 12),
-              ZWO_IOError('Buffer too small', 13),
-              ZWO_IOError('Video mode active', 14),
-              ZWO_IOError('Exposure in progress', 15),
-              ZWO_IOError('General error', 16),
-              ZWO_IOError('Invalid mode', 17)
-              ]
-
 
 zwolib = None
