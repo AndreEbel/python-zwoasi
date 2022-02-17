@@ -72,7 +72,7 @@ class _EFW_INFO(c.Structure):
 def init(library_file): 
 
     if library_file is None:
-        library_file = find_library('ASICamera2')
+        library_file = find_library('EFW_Filter')
     
     efwlib = c.cdll.LoadLibrary(library_file)
 
@@ -112,6 +112,7 @@ def init(library_file):
     return efwlib
 
 class EFW(object): 
+    
     def __init__(self, library_file = None): 
         self.dll = init(library_file)
 
