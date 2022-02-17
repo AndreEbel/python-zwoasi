@@ -73,7 +73,7 @@ def init(library_file):
 
     if library_file is None:
         library_file = find_library('EFW_filter')
-    if library_file is None:
+    if library_file is None: #find library did not work
         raise EFW_Error('EFW SDK library not found')
 
     efwlib = c.cdll.LoadLibrary(library_file)
