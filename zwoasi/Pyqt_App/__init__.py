@@ -71,7 +71,7 @@ def ZwoDisplayAdvanced(cam_id = 0, w = 2000, h =2000, b=1, verbose = False):
                     height = h,
                     bins= b)
     Video = VideoThread(Cam)
-    a = DisplayAdvanced(Video,200, 200, verbose)
+    a = DisplayAdvanced(Video,500, 500, verbose)
     a.show()
     app.exec_()
     
