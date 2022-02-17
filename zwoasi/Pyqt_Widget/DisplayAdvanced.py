@@ -28,7 +28,7 @@ class DisplayAdvanced_base(DisplaySave_base):
         self.auto_exposure_button = QPushButton('Set Autoexposure On',self)
         self.auto_exposure_button.clicked.connect(self.ClickAutoExposureOn)
         hbox_exp = QHBoxLayout()
-        hbox_exp.addStretch(1)
+        #hbox_exp.addStretch(1)
         hbox_exp.addWidget(self.exposure_input)
         hbox_exp.addWidget(self.exposure_button)
         hbox_exp.addWidget(self.auto_exposure_button)
@@ -42,7 +42,7 @@ class DisplayAdvanced_base(DisplaySave_base):
         self.gain_button = QPushButton('Set gain',self)
         self.gain_button.clicked.connect(self.ClickSetGain)
         hbox_gain = QHBoxLayout()
-        hbox_gain.addStretch(1)
+        #hbox_gain.addStretch(1)
         hbox_gain.addWidget(self.gain_input)
         hbox_gain.addWidget(self.gain_button)
         
