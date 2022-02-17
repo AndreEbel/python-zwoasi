@@ -3,7 +3,7 @@ __version__ = '2'
 import sys
 
 from .pyzwoasi import ZWO_Error, get_num_cameras, list_cameras, Camera, init, zwolib
-from .pyefw import EFW_Error, EFW, init, efwlib
+from .pyefw import EFW_Error, EFW#,  init
 
 try:
     init() # Initialize library on import, will only run once.
