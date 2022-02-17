@@ -72,8 +72,10 @@ class _EFW_INFO(c.Structure):
 def init(library_file): 
 
     if library_file is None:
-        library_file = find_library('EFW_Filter')
-    
+        library_file = find_library('EFW_filter')
+    if library_file is None:
+        raise EFW_Error('EFW SDK library not found')
+
     efwlib = c.cdll.LoadLibrary(library_file)
 
     efwlib.EFWGetNum.argtypes = []
