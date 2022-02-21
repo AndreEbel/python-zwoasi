@@ -119,6 +119,7 @@ class EFW(object):
     slotNums = {}
     FiltersNames = {}
     FiltersSlots = {}
+    calibrated = False
 
     def __init__(self, library_file = None, verbose = True): #ok
         self.verbose = verbose
@@ -230,4 +231,26 @@ class EFW(object):
     #     return direction
     # def GetProductIDs(self): #not tested
     #     self.dll.EFWGetProductIDs()
+
+class SingleMiniEFW(EFW): 
+    def __init__(self, library_file = None, verbose = True): #ok
+        super().__init__(library_file, verbose)
+        self.SetFiltersNames(0, {0: 'empty', 
+                                1: 'R', 
+                                2: 'G', 
+                                3: 'B', 
+                                4: 'L'})
+
+    def SetColor(self, color): 
+        """
+        Select color of the filter
+
+        Args:
+            color (string): 'R', 'G, 'B, 'L'
+        """
+        if color in self.FiltersSlots[0]: 
+            pos = self.FiltersSlots[0][color]
+            self.SetPosition(0, pos)
     
+    def Close(self): 
+         super().Close(0)
