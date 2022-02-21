@@ -10,3 +10,4 @@ from .DisplaySave import DisplaySave
 from .Display import Display
 from .DisplayAdvancedHist import DisplayAdvancedHist
 from .MultiCam import TwoCam
+from .FilterSelect import FilterSelect
