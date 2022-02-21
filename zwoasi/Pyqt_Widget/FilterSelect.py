@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QWidget,QLabel,QVBoxLayout, QPushButton, QCheckBox, 
 from PyQt5.QtCore import Qt
 import numpy as np
 
-class FilterSelect(QWidget):
+class FilterSelect_base(QWidget):
     
     def __init__(self, EFW, verbose):
         super().__init__()
@@ -44,7 +44,11 @@ class FilterSelect(QWidget):
             if len(channel)==1: 
                 self.EFW.SetColor(0,channel[0])
                 self.label_filter.setText('Filter slot is '+ channel[0])
-     
+                
+class FilterSelect(FilterSelect_base):  
+    def __init__(self, EFW, verbose):
+        super().__init__(EFW, verbose)
+
     def closeEvent(self, event):
         self.label_filter.setText('Closing')
         self.EFW.Close(0)
