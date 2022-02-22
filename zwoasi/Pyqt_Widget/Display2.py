@@ -4,10 +4,9 @@ Created on Tue Mar  9 19:04:32 2021
 
 @author: ebel
 """
-from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget,QTabWidget, QLabel,QVBoxLayout, QHBoxLayout, QPushButton,QLineEdit, QFrame
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import pyqtSlot, Qt,  QTimer
 import numpy as np
 import pyqtgraph as pg
 
@@ -15,6 +14,7 @@ class Display2_base(QWidget):
     closed = False
     def __init__(self, VideoThread, w, h, title, verbose):
         super().__init__()
+        
         self.display_thread = VideoThread
         self.setWindowTitle(title)
         
@@ -27,8 +27,9 @@ class Display2_base(QWidget):
         # 1st row: Display
         self.display_width = w
         self.display_height = h
+        self.frame = np.zeros((self.display_height, self.display_width))
         self.image_label = pg.ImageView()#QLabel(self)
-        self.image_label.setImage(np.zeros((self.display_height, self.display_width )))
+        self.image_label.setImage(self.frame)
         self.image_label.autoRange()
         self.vbox.addWidget(self.image_label) 
         
@@ -120,7 +121,10 @@ class Display2_base(QWidget):
         
         # initialize the camera
         self.display_thread.camera.set_camera()
-   
+
+        self.timer = QTimer()
+        self.timer.setInterval(100)#ms
+        self.timer.timeout.connect(self.update_live)
     
     @pyqtSlot(np.ndarray)
     def update_image(self, img):
@@ -128,14 +132,11 @@ class Display2_base(QWidget):
         Updates the image_label with a new opencv image
         """
         self.frame = img
-        # self.pixmap = self.convert_cv_qt(img)
+        # self.image_label.setImage(self.frame.T)
+      
+    def update_live(self): 
         self.image_label.setImage(self.frame.T)
-        #print(self.image_label.width(),self.image_label.height())
-        # self.image_label.setPixmap(self.pixmap.scaled(
-        #     self.image_label.width(),self.image_label.height(),
-        #     Qt.KeepAspectRatio, 
-        #     Qt.FastTransformation))
-    
+
     # Activates when Start/Stop video button is clicked to Start (ss_video
     def ClickStartVideo(self):
         self.ss_video.clicked.disconnect(self.ClickStartVideo)
@@ -150,6 +151,7 @@ class Display2_base(QWidget):
         self.display_thread.camera.ready= True
         self.display_thread.start()
         self.display_thread.display_frame.connect(self.update_image)
+        self.timer.start()
         # Stop the video if button clicked  
         self.ss_video.clicked.connect(self.ClickStopVideo)
     
@@ -159,6 +161,7 @@ class Display2_base(QWidget):
         self.ss_video.clicked.disconnect(self.ClickStopVideo)
         # start the thread
         self.display_thread.stop()
+        self.timer.stop()
         self.ss_video.setText('Start video')
         self.video_status.setText('Ready to start')
         # Start the video if button clicked
