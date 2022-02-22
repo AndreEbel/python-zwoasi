@@ -5,7 +5,7 @@ Created on Tue Mar  9 19:04:32 2021
 @author: ebel
 """
 
-from .Display import Display_base
+from .Display2 import Display2_base
 
 from PyQt5.QtWidgets import QLineEdit, QWidget,QLabel,QHBoxLayout,QVBoxLayout, QPushButton
 from PyQt5.QtGui import QIntValidator
@@ -16,7 +16,7 @@ import numpy as np
 from time import time_ns, sleep
 import os
 
-class DisplaySave_base(Display_base):
+class DisplaySave_base(Display2_base):
     metadata = {}
     def __init__(self, VideoThread, w, h, title, verbose):
         super().__init__(VideoThread,  w, h, title, verbose)
