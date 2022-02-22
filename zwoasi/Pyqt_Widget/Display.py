@@ -15,11 +15,15 @@ import numpy as np
 
 class Display_base(QWidget):
     closed = False
-    def __init__(self, VideoThread, w, h, title):
+    def __init__(self, VideoThread, w, h, title, verbose):
         super().__init__()
         self.display_thread = VideoThread
         self.setWindowTitle(title)
         
+        self.verbose = verbose
+        
+         # create a vertical box layout
+        self.vbox = QVBoxLayout()
         # 1st row: Display
         self.display_width = w
         self.display_height = h
@@ -28,29 +32,29 @@ class Display_base(QWidget):
         self.image_label.adjustSize()
         self.image_label.setAlignment(Qt.AlignCenter)
         
-        self.display_box =  QVBoxLayout()
-        self.display_box.addWidget(self.image_label)
-        #self.display_box.addStretch(1)
+        self.vbox.addWidget(self.image_label) 
         
-        # 2nd row: settings 
+        
+        # 2nd row: settings / info bar 
         self.settings_box =  QVBoxLayout()
-        self.textLabel1 = QLabel('Ready to start')
-        self.ss_video = QPushButton('Start video',self)
-        self.ss_video.clicked.connect(self.ClickStartVideo)
-        hbox1 = QHBoxLayout()
-        hbox1.addStretch(1)
-        hbox1.addWidget(self.textLabel1)
-        hbox1.addWidget(self.ss_video)
-        self.settings_box.addLayout(hbox1)
+        
+        self.info_box = QHBoxLayout()
+        #self.info_box.addStretch(1)
+        self.video_status = QLabel('Ready to start')
+        self.info_box.addWidget(self.video_status)
+        self.settings_box.addLayout(self.info_box)
         
         # Initialize tab screen
         self.tabs = QTabWidget()
-        self.tabs.setMaximumHeight(100)
+        self.tabs.setMaximumHeight(150)
         self.settings_box.addWidget(self.tabs)
         # first tab
         self.tab = QWidget()
         self.tab.layout = QVBoxLayout()
+        self.tabs.addTab(self.tab, "Image size")
         
+        self.ss_video = QPushButton('Start video',self)
+        self.ss_video.clicked.connect(self.ClickStartVideo)
         #width, height, and bins 
         self.widthlabel = QLabel('Width')
         self.width_input = QLineEdit()
@@ -80,14 +84,17 @@ class Display_base(QWidget):
         vbox_bins.addWidget(self.bins_input)
         
         # initialize the input
-        self.width_input.setText(str(self.display_thread.camera.width))
-        self.height_input.setText(str(self.display_thread.camera.height))
-        self.bins_input.setText(str(self.display_thread.camera.bins))
+        if self.display_thread.camera.id != None: # because 0 is ok
+            self.width_input.setText(str(self.display_thread.camera.width))
+            self.height_input.setText(str(self.display_thread.camera.height))
+            self.bins_input.setText(str(self.display_thread.camera.bins))
         
         self.size_button = QPushButton('Set image size',self)
         self.size_button.clicked.connect(self.ClickSetImageSize)
+        
         hbox_size= QHBoxLayout()
-        hbox_size.addStretch(1)
+        #hbox_size.addStretch(1)         
+        hbox_size.addWidget(self.ss_video)
         hbox_size.addLayout(vbox_width)
         hbox_size.addLayout(vbox_height)
         hbox_size.addLayout(vbox_bins)
@@ -95,14 +102,6 @@ class Display_base(QWidget):
         self.tab.layout.addLayout(hbox_size)
         self.tab.setLayout(self.tab.layout)
         
-        self.tabs.addTab(self.tab, "Image size")
-        
-        #self.settings_box.addStretch()
-        # create a vertical box layout
-        self.vbox = QVBoxLayout()
-       
-        self.vbox.addLayout(self.display_box)
-        #self.vbox.addStretch(1)
         self.vbox.addLayout(self.settings_box)
 
         # set the vbox layout as the widgets layout
@@ -110,12 +109,10 @@ class Display_base(QWidget):
         
         # initialize the camera
         self.display_thread.camera.set_camera()
-        # start the thread
-        #self.display_thread.start()
-    
+   
 
         # create a grey pixmap
-        self.pixmap = QPixmap(100, 100)
+        self.pixmap = QPixmap(self.display_width, self.display_height)
         self.pixmap.fill(QColor('darkGray'))
         # set the image image to the grey pixmap
         self.image_label.setPixmap(self.pixmap.scaled(
@@ -155,7 +152,7 @@ class Display_base(QWidget):
         self.ss_video.clicked.disconnect(self.ClickStartVideo)
         
         # update labels
-        self.textLabel1.setText('Video running')
+        self.video_status.setText('Video running')
 
         # Change button to stop
         self.ss_video.setText('Stop video')
@@ -174,7 +171,7 @@ class Display_base(QWidget):
         # start the thread
         self.display_thread.stop()
         self.ss_video.setText('Start video')
-        self.textLabel1.setText('Ready to start')
+        self.video_status.setText('Ready to start')
         # Start the video if button clicked
         self.ss_video.clicked.connect(self.ClickStartVideo)
     
@@ -185,25 +182,29 @@ class Display_base(QWidget):
             print('camera has been closed')
             
     def ClickSetImageSize(self):
-        w = int(self.width_input.text())
-        h = int(self.height_input.text())
-        b = int(self.bins_input.text())
-        #print("stop the camera")
-        self.display_thread.stop()
-        self.display_thread.camera.set_roi(width=w, 
-                                           height=h,
-                                           bins=b)
-        #print("restart the camera")
-        self.display_thread.camera.ready= True
-        self.display_thread.start()
-        self.width_input.setText(str(self.display_thread.camera.width))
-        self.height_input.setText(str(self.display_thread.camera.height))
-        self.bins_input.setText(str(self.display_thread.camera.bins))
+        if (self.width_input.text()!=None)&(self.height_input.text()!=None)&(self.bins_input.text()!=None):
+            w = int(self.width_input.text())
+            h = int(self.height_input.text())
+            b = int(self.bins_input.text())
+            #print("stop the camera")
+            self.display_thread.stop()
+            self.display_thread.camera.set_roi(width=w, 
+                                               height=h,
+                                               bins=b)
+            #print("restart the camera")
+            self.display_thread.camera.ready= True
+            self.display_thread.start()
+            self.width_input.setText(str(self.display_thread.camera.width))
+            self.height_input.setText(str(self.display_thread.camera.height))
+            self.bins_input.setText(str(self.display_thread.camera.bins))
+        else: 
+            if self.verbose: 
+                print('all inputs are not filled')
         
 class Display(Display_base):
     
-    def __init__(self, VideoThread, w, h):
-        super().__init__(VideoThread, w, h, "Zwo camera display")
+    def __init__(self, VideoThread, w, h, verbose):
+        super().__init__(VideoThread, w, h, "Zwo camera display", verbose)
     def closeEvent(self, event):
         if self.display_thread.camera.ready: 
             self.display_thread.stop()
