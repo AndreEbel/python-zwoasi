@@ -82,18 +82,20 @@ ASI_EXP_SUCCESS = 2
 ASI_EXP_FAILED = 3
 
 
-def init(library_file=None):
+def init(library_file=None, verbose = True):
     print('initialization')
     global zwolib
 
-    if zwolib is not None:
-        return # Library already initialized. do nothing
+    if zwolib:
+        if verbose: 
+            print('Library already initialized')
+        return # 
 
     if library_file is None:
         library_file = find_library('ASICamera2')
 
-    if library_file is None:
-        raise ZWO_Error('ASI SDK library not found')
+        if library_file is None:
+            raise ZWO_Error('ASI SDK library not found')
 
     zwolib = c.cdll.LoadLibrary(library_file)
 
