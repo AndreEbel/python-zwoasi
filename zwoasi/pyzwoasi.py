@@ -304,8 +304,11 @@ class Camera(object):
     The constructor for a camera object requires the camera ID number or model. The camera destructor automatically
     closes the camera.
     """
+    closed = True
     default_timeout = -1
     ready = False
+    temperature = None, 
+    target_temperature = None
     def __init__(self, cam_id):
         
         self.id = cam_id
@@ -345,6 +348,7 @@ class Camera(object):
     def set_camera(self):
         # initialization of the camera
         if self.id != None: 
+            print("setting camera")
             self.detect_camera()
             camera_info = self.get_camera_property()
             if camera_info['IsColorCam']:
@@ -353,7 +357,7 @@ class Camera(object):
                 self.set_image_type(ASI_IMG_RAW8)
             self.exposure = self.get_control_value(ASI_EXPOSURE)[0]
             self.gain = self.get_control_value(ASI_GAIN)[0]
-            #print('exp gain', self.exposure, self.gain)
+            print('exp gain', self.exposure, self.gain)
            
             self.set_control_value(ASI_BANDWIDTHOVERLOAD,
                                    self.get_controls()['BandWidth']['MinValue'])
@@ -376,8 +380,8 @@ class Camera(object):
             r[d['Name']] = d
         return r
 
-    def set_controls(self):
-        pass
+    # def set_controls(self):
+    #     pass
 
     def get_roi_format(self):
         return _get_roi_format(self.id)
@@ -524,8 +528,32 @@ class Camera(object):
 
     def disable_dark_subtract(self):
         _disable_dark_subtract(self.id)
-        
+
+    def get_temperature(self): 
+        ans = self.get_control_value(ASI_TEMPERATURE)
+        self.temperature = float(ans[0])/10.0
+        return self.temperature
     
+    def set_temperature(self, target_temperature): 
+        self.target_temperature = target_temperature
+        self.set_control_value(ASI_COOLER_ON, 1)
+        self.set_control_value(ASI_TARGET_TEMP, target_temperature)
+
+    def is_cooled(self): 
+        ans = self.get_control_value(ASI_COOLER_ON)
+        if ans == 1: 
+            return True
+        else: 
+            return False
+
+    def is_cooled_down(self): 
+        if self.target_temperature: 
+            if self.get_temperature == self.target_temperature:
+                return True
+            else: 
+                return False
+        else: 
+           return False
     
     def pulse_guide_on(self, direction):
         _pulse_guide_on(self.id, direction)
