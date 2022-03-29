@@ -1,6 +1,6 @@
 
 import zwoasi as asi
-from zwoasi.Pyqt_Widget import Display, Display2, DisplaySave, DisplayAdvanced, DisplayAdvancedHist, TwoCam, FilterSelect
+from zwoasi.Pyqt_Widget import Display, Display2, DisplaySave, DisplayAdvanced, DisplayAdvancedHist, TwoCam
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication
 import sys
@@ -134,17 +134,3 @@ def ZwoTwoCam(w = 2000, h =2000, b=1, verbose = False):
     a.show()
     app.exec_()
    
-def ZwoEFW(library_file = None, verbose = False): 
-    app = QtCore.QCoreApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    wheel = asi.EFW(library_file, verbose)
-    # print(wheel.IDs)
-    wheel.SetFiltersNames(0, {0: 'empty', 
-                                1: 'R', 
-                                2: 'G', 
-                                3: 'B', 
-                                4: 'L'})
-    a = FilterSelect(wheel, verbose)
-    a.show()
-    app.exec_()

@@ -11,4 +11,3 @@ from .Display import Display
 from .Display2 import Display2
 from .DisplayAdvancedHist import DisplayAdvancedHist
 from .MultiCam import TwoCam
-from .FilterSelect import FilterSelect

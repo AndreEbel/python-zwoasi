@@ -1,9 +1,8 @@
 __version__ = '2'
 
-import sys
+# import sys
 
 from .pyzwoasi import ZWO_Error, get_num_cameras, list_cameras, Camera, init, zwolib
-from .pyzwoefw import EFW_Error, EFW, SingleMiniEFW
 
 # try:
 #     init() # Initialize library on import, will only run once.
